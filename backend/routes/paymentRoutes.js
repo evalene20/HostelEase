@@ -2,26 +2,17 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// GET payments
-router.get('/', (req, res, next) => {
-  db.query('SELECT * FROM Payment', (err, result) => {
-    if (err) return next(err);
-    res.json(result);
-  });
-});
-
-// ADD payment
-router.post('/', (req, res, next) => {
-  const { booking_id, amount, payment_date } = req.body;
-
-  const query = `
-    INSERT INTO Payment (booking_id, amount, payment_date, payment_status)
-    VALUES (?, ?, ?, 'SUCCESS')
+router.get('/', (req, res) => {
+  const sql = `
+    SELECT p.payment_id, s.full_name, p.amount, p.payment_status, p.payment_date
+    FROM Payment p
+    JOIN Booking b ON p.booking_id = b.booking_id
+    JOIN Student s ON b.student_id = s.student_id
   `;
 
-  db.query(query, [booking_id, amount, payment_date], (err) => {
-    if (err) return next(err);
-    res.send('Payment added');
+  db.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(result);
   });
 });
 

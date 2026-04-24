@@ -2,66 +2,36 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 
-// GET bookings (JOIN)
-router.get('/', (req, res, next) => {
-  const query = `
-    SELECT 
-      b.booking_id,
-      s.full_name,
-      r.room_no,
-      b.booking_date,
-      b.status
+// GET bookings
+router.get('/', (req, res) => {
+  const sql = `
+    SELECT b.booking_id, s.full_name, r.room_no, h.hostel_name, b.status
     FROM Booking b
     JOIN Student s ON b.student_id = s.student_id
     JOIN Room r ON b.room_id = r.room_id
+    JOIN Hostel h ON r.hostel_id = h.hostel_id
   `;
 
-  db.query(query, (err, result) => {
-    if (err) return next(err);
+  db.query(sql, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json(result);
   });
 });
 
-// ADD booking with capacity check
-router.post('/', (req, res, next) => {
-  const { student_id, room_id, booking_date } = req.body;
+// POST booking (using procedure)
+router.post('/', (req, res) => {
+  const { student_id, room_id, booking_date } = req.body || {};
 
-  const capacityQuery = `SELECT capacity FROM Room WHERE room_id = ?`;
+  if (!student_id || !room_id || !booking_date) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
-  db.query(capacityQuery, [room_id], (err, roomResult) => {
-    if (err) return next(err);
+  const sql = `CALL SafeInsertBooking(?, ?, ?)`;
 
-    if (roomResult.length === 0) {
-      return res.status(404).send('Room not found');
-    }
+  db.query(sql, [student_id, room_id, booking_date], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
 
-    const capacity = roomResult[0].capacity;
-
-    const countQuery = `
-      SELECT COUNT(*) AS count
-      FROM Booking
-      WHERE room_id = ? AND status = 'APPROVED'
-    `;
-
-    db.query(countQuery, [room_id], (err, countResult) => {
-      if (err) return next(err);
-
-      const count = countResult[0].count;
-
-      if (count >= capacity) {
-        return res.status(400).send('Room is full');
-      }
-
-      const insertQuery = `
-        INSERT INTO Booking (student_id, room_id, booking_date, status)
-        VALUES (?, ?, ?, 'REQUESTED')
-      `;
-
-      db.query(insertQuery, [student_id, room_id, booking_date], (err) => {
-        if (err) return next(err);
-        res.send('Booking created');
-      });
-    });
+    res.json({ message: 'Booking processed successfully' });
   });
 });
 
