@@ -1,9 +1,12 @@
 const express = require('express');
+const cors = require('cors');   // 👈 ADD THIS
+
 const app = express();
 
 const errorHandler = require('./middleware/errorHandler');
 
-app.use(express.json()); // REQUIRED
+app.use(cors());                // 👈 ADD THIS (VERY IMPORTANT POSITION)
+app.use(express.json()); 
 
 // Routes
 const studentRoutes = require('./routes/studentRoutes');

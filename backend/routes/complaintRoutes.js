@@ -15,4 +15,22 @@ router.get('/', (req, res) => {
   });
 });
 
+router.post('/', (req, res) => {
+  const { student_id, complaint_type, complaint_date, priority } = req.body || {};
+
+  if (!student_id || !complaint_type || !complaint_date || !priority) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const sql = `
+    INSERT INTO Complaint (student_id, complaint_type, complaint_date, priority)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(sql, [student_id, complaint_type, complaint_date, priority], (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.status(201).json({ message: 'Complaint created successfully', complaint_id: result.insertId });
+  });
+});
+
 module.exports = router;
