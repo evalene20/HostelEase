@@ -9,6 +9,9 @@ const roomColumns = [
   { header: "Room No", accessor: "room_no" },
   { header: "Capacity", accessor: "capacity" },
   { header: "Hostel", accessor: "hostel_name" },
+  { header: "Occupancy", accessor: "current_occupancy" },
+  { header: "Status", accessor: "occupancy_status" },
+  { header: "Alert", accessor: "ai_room_alert" },
 ];
 
 const Rooms = () => {

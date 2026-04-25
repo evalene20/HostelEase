@@ -14,6 +14,7 @@ const paymentColumns = [
     render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
   },
   { header: "Date", accessor: "payment_date" },
+  { header: "Risk", accessor: "student_payment_risk" },
 ];
 
 const Payments = () => {

@@ -9,11 +9,13 @@ const bookingColumns = [
   { header: "Student", accessor: "full_name" },
   { header: "Room", accessor: "room_no" },
   { header: "Hostel", accessor: "hostel_name" },
+  { header: "Date", accessor: "booking_date" },
   {
     header: "Status",
     accessor: "status",
     render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
   },
+  { header: "AI Suggestion", accessor: "ai_booking_reason" },
 ];
 
 const Bookings = () => {

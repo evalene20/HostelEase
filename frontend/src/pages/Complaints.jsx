@@ -9,11 +9,15 @@ const complaintColumns = [
   { header: "Student", accessor: "full_name" },
   { header: "Type", accessor: "complaint_type" },
   { header: "Date", accessor: "complaint_date" },
+  { header: "Assigned Staff", accessor: "assigned_staff" },
+  { header: "Status", accessor: "complaint_status" },
+  { header: "Resolution Days", accessor: "resolution_time_days" },
   {
     header: "Priority",
     accessor: "priority",
     render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
   },
+  { header: "AI Feedback", accessor: "ai_feedback" },
 ];
 
 const Complaints = () => {

@@ -14,12 +14,16 @@ const bookingRoutes = require('./routes/bookingRoutes');
 const complaintRoutes = require('./routes/complaintRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const roomRoutes = require('./routes/roomRoutes');
+const staffRoutes = require('./routes/staffRoutes');
+const messRoutes = require('./routes/messRoutes');
 
 app.use('/students', studentRoutes);
 app.use('/bookings', bookingRoutes);
 app.use('/complaints', complaintRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/rooms', roomRoutes);
+app.use('/staff', staffRoutes);
+app.use('/mess', messRoutes);
 
 // Error handler (must be last)
 app.use(errorHandler);

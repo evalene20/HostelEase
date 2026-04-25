@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 function Login({ onLogin }) {
-  const navigate = useNavigate();
   const [formState, setFormState] = useState({
+    role: "admin",
     username: "",
     password: "",
+    studentId: "1",
   });
   const [error, setError] = useState("");
 
@@ -24,59 +24,60 @@ function Login({ onLogin }) {
       return;
     }
 
-    onLogin(formState.username.trim());
-    navigate("/home", { replace: true });
+    setError("");
+    onLogin({
+      role: formState.role,
+      username: formState.username.trim(),
+      studentId: Number(formState.studentId) || 1,
+    });
   };
 
   return (
     <div className="login-page">
       <section className="login-card">
         <div className="login-copy">
-          <p className="eyebrow">Welcome Back</p>
-          <h1 className="login-title">Login to Smart Hostel Management</h1>
-          <p className="login-description">
-            Sign in first, then you will land on the home page and can move to the
-            dashboard from the top navigation.
-          </p>
+          <p className="eyebrow">Access Portal</p>
+          <h1 className="login-title">Hostel Management System</h1>
         </div>
 
         {error ? <div className="message message-error">{error}</div> : null}
 
         <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
-            <label className="form-label" htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              name="username"
-              className="form-input"
-              value={formState.username}
-              onChange={handleChange}
-              placeholder="admin"
-              required
-            />
+          <div className="role-switch">
+            <button
+              type="button"
+              className={`role-chip ${formState.role === "admin" ? "active" : ""}`}
+              onClick={() => setFormState((current) => ({ ...current, role: "admin" }))}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              className={`role-chip ${formState.role === "student" ? "active" : ""}`}
+              onClick={() => setFormState((current) => ({ ...current, role: "student" }))}
+            >
+              Student
+            </button>
           </div>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              className="form-input"
-              value={formState.password}
-              onChange={handleChange}
-              placeholder="password"
-              required
-            />
+            <label className="form-label" htmlFor="username">Username</label>
+            <input id="username" name="username" className="form-input" value={formState.username} onChange={handleChange} required />
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            Login
-          </button>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" className="form-input" value={formState.password} onChange={handleChange} required />
+          </div>
+
+          {formState.role === "student" ? (
+            <div className="form-group">
+              <label className="form-label" htmlFor="studentId">Student ID</label>
+              <input id="studentId" name="studentId" type="number" min="1" className="form-input" value={formState.studentId} onChange={handleChange} />
+            </div>
+          ) : null}
+
+          <button type="submit" className="btn btn-primary">Login</button>
         </form>
       </section>
     </div>

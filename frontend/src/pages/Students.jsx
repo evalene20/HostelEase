@@ -9,6 +9,9 @@ const studentColumns = [
   { header: "Name", accessor: "full_name" },
   { header: "Register No", accessor: "register_no" },
   { header: "College", accessor: "college_name" },
+  { header: "Hostel", accessor: "hostel_name" },
+  { header: "Room", accessor: "room_no" },
+  { header: "Risk", accessor: "ai_student_risk" },
 ];
 
 const Students = () => {

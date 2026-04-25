@@ -1,21 +1,11 @@
 import { Link, NavLink } from "react-router-dom";
 import "./Navbar.css";
 
-const navItems = [
-  { path: "/home", label: "Home" },
-  { path: "/dashboard", label: "Dashboard" },
-  { path: "/students", label: "Students" },
-  { path: "/rooms", label: "Rooms" },
-  { path: "/bookings", label: "Bookings" },
-  { path: "/complaints", label: "Complaints" },
-  { path: "/payments", label: "Payments" },
-];
-
-function Navbar({ username, onLogout }) {
+function Navbar({ username, role, navItems, homePath, onLogout }) {
   return (
     <header className="navbar">
       <div className="navbar-content">
-        <Link to="/home" className="navbar-logo">
+        <Link to={homePath} className="navbar-logo">
           <span className="logo-icon">SH</span>
           <span className="logo-text">Smart Hostel</span>
         </Link>
@@ -33,12 +23,10 @@ function Navbar({ username, onLogout }) {
         </nav>
 
         <div className="navbar-actions">
-          <span className="navbar-user">{username || "Admin"}</span>
-          <button
-            type="button"
-            className="btn btn-secondary btn-small"
-            onClick={onLogout}
-          >
+          <span className="navbar-user">
+            {role === "admin" ? "Admin" : "Student"}: {username}
+          </span>
+          <button type="button" className="btn btn-secondary btn-small" onClick={onLogout}>
             Logout
           </button>
         </div>

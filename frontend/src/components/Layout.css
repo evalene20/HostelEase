@@ -126,6 +126,11 @@ body {
   box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
 }
 
+.form-textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -161,6 +166,14 @@ body {
   text-align: center;
   padding: 3rem;
   color: var(--text);
+}
+
+.table-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text);
+  border: 1px dashed var(--border);
+  border-radius: 16px;
 }
 
 @media (max-width: 900px) {
