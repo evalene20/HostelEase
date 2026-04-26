@@ -1,29 +1,43 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-
-function loadRequests(studentId) {
-  try {
-    return JSON.parse(window.localStorage.getItem(`outing-${studentId}`) || "[]");
-  } catch {
-    return [];
-  }
-}
+import { fetchOutings, createOuting, recordOutingReturn, getErrorMessage } from "../../services/authApi";
 
 function Outing() {
   const { session } = useOutletContext();
   const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [submitMessage, setSubmitMessage] = useState("");
   const [formState, setFormState] = useState({
-    date: "",
+    outing_date: "",
     time_out: "",
     expected_return: "",
+    purpose: "",
   });
 
+  const loadOutings = async () => {
+    try {
+      const data = await fetchOutings();
+      setRequests(data);
+      setError("");
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to load outings."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    setRequests(loadRequests(session.studentId));
-  }, [session.studentId]);
+    loadOutings();
+  }, []);
 
   const lateAlerts = useMemo(
-    () => requests.filter((request) => request.status === "LATE").length,
+    () => requests.filter((request) => request.computed_status === "LATE").length,
+    [requests]
+  );
+
+  const pendingApprovals = useMemo(
+    () => requests.filter((request) => request.status === "PENDING").length,
     [requests]
   );
 
@@ -31,18 +45,33 @@ function Outing() {
     setFormState((current) => ({ ...current, [name]: value }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    const nextRequest = {
-      ...formState,
-      id: Date.now(),
-      status: requests.length % 2 === 0 ? "APPROVED" : "PENDING",
-    };
-    const nextRequests = [nextRequest, ...requests];
-    setRequests(nextRequests);
-    window.localStorage.setItem(`outing-${session.studentId}`, JSON.stringify(nextRequests));
-    setFormState({ date: "", time_out: "", expected_return: "" });
+    try {
+      await createOuting(formState);
+      setSubmitMessage("Outing request submitted successfully.");
+      setFormState({ outing_date: "", time_out: "", expected_return: "", purpose: "" });
+      await loadOutings();
+      setTimeout(() => setSubmitMessage(""), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to submit outing request."));
+    }
   };
+
+  const handleReturn = async (outingId) => {
+    try {
+      await recordOutingReturn(outingId);
+      await loadOutings();
+      setSubmitMessage("Return time recorded.");
+      setTimeout(() => setSubmitMessage(""), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to record return."));
+    }
+  };
+
+  if (loading) {
+    return <p className="loading">Loading outings...</p>;
+  }
 
   return (
     <div className="page-shell">
@@ -51,18 +80,30 @@ function Outing() {
           <p className="eyebrow">Outing</p>
           <h1 className="page-title">Outing permission and late return tracking</h1>
           <p className="page-description">
-            Submit a going-out request, track approval, and see return alerts. This uses a local demo flow until outing tables are added.
+            Submit a going-out request, track approval, and see return alerts.
           </p>
         </div>
       </section>
+
+      {error && (
+        <div className="badge badge-danger" style={{ marginBottom: "16px", display: "block" }}>
+          {error}
+        </div>
+      )}
+
+      {submitMessage && (
+        <div className="badge badge-success" style={{ marginBottom: "16px", display: "block" }}>
+          {submitMessage}
+        </div>
+      )}
 
       <section className="card">
         <div className="card-header"><h2 className="card-title">Request outing</h2></div>
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="date">Date</label>
-              <input id="date" name="date" type="date" className="form-input" value={formState.date} onChange={handleChange} required />
+              <label className="form-label" htmlFor="outing_date">Date</label>
+              <input id="outing_date" name="outing_date" type="date" className="form-input" value={formState.outing_date} onChange={handleChange} required />
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="time_out">Time out</label>
@@ -71,6 +112,12 @@ function Outing() {
             <div className="form-group">
               <label className="form-label" htmlFor="expected_return">Expected return</label>
               <input id="expected_return" name="expected_return" type="time" className="form-input" value={formState.expected_return} onChange={handleChange} required />
+            </div>
+          </div>
+          <div className="form-row">
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label" htmlFor="purpose">Purpose (optional)</label>
+              <input id="purpose" name="purpose" type="text" className="form-input" value={formState.purpose} onChange={handleChange} placeholder="Brief purpose of outing" />
             </div>
           </div>
           <div className="form-actions">
@@ -82,8 +129,8 @@ function Outing() {
       <section className="card">
         <div className="card-header"><h2 className="card-title">Outing alerts</h2></div>
         <div className="list-stack">
-          <div className="list-row">Approval status tracking is enabled for all requests.</div>
-          <div className="list-row">{lateAlerts ? `${lateAlerts} late return alert(s) recorded.` : "No late return alerts right now."}</div>
+          <div className="list-row">{pendingApprovals > 0 ? `${pendingApprovals} pending approval(s).` : "No pending approvals."}</div>
+          <div className="list-row">{lateAlerts > 0 ? `${lateAlerts} late return alert(s).` : "No late return alerts."}</div>
         </div>
       </section>
 
@@ -91,8 +138,23 @@ function Outing() {
         <div className="card-header"><h2 className="card-title">Outing history</h2></div>
         <div className="list-stack">
           {requests.length ? requests.map((request) => (
-            <div key={request.id} className="list-row">
-              {request.date} / {request.time_out} - {request.expected_return} / {request.status}
+            <div key={request.outing_id} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <strong>{request.outing_date}</strong> | Out: {request.time_out} | Return by: {request.expected_return}
+                {request.purpose && <span style={{ color: "#666", marginLeft: "8px" }}>({request.purpose})</span>}
+                <span className={`badge badge-${request.status?.toLowerCase()}`} style={{ marginLeft: "8px" }}>
+                  {request.computed_status || request.status}
+                </span>
+              </div>
+              {request.status === "APPROVED" && !request.actual_return && (
+                <button
+                  onClick={() => handleReturn(request.outing_id)}
+                  className="btn btn-sm"
+                  style={{ background: "#4f46e5", color: "white", border: "none", padding: "4px 12px", fontSize: "0.75rem" }}
+                >
+                  Mark Returned
+                </button>
+              )}
             </div>
           )) : <div className="table-empty">No outing requests yet.</div>}
         </div>

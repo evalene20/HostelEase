@@ -1,40 +1,53 @@
 import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import { getStudentRecord } from "../../utils/dashboardInsights";
+import { getProfile, getErrorMessage } from "../../services/authApi";
 
 function Profile() {
   const { session, onLogout } = useOutletContext();
-  const { data, loading, error } = useHostelData(["students"]);
-  
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
   const [profileData, setProfileData] = useState({
-    name: "",
+    name: session?.username || "",
     number: "+91 90000 11111",
     email: "student@hostel.edu",
     emergencyContact: "+91 98765 43210",
     hostelName: "Not allocated yet",
     room: "Pending booking",
     warden: "Joseph (Warden)",
-    college: "ABC Engineering College",
-    maintenance: "Ravi Kumar (Maintenance)"
+    college: session?.collegeName || "ABC Engineering College",
+    maintenance: "Ravi Kumar (Maintenance)",
+    registerNo: session?.registerNo || "",
+    city: "",
   });
 
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    if (data.students && session.studentId) {
-      const student = getStudentRecord(data.students, session.studentId);
-      if (student) {
-        setProfileData(prev => ({
-          ...prev,
-          name: student.full_name,
-          hostelName: student.hostel_name || prev.hostelName,
-          room: student.room_no || prev.room,
-          college: student.college_name || prev.college
-        }));
+    const loadProfile = async () => {
+      try {
+        const data = await getProfile();
+        if (data.role === "STUDENT") {
+          setProfileData(prev => ({
+            ...prev,
+            name: data.full_name || prev.name,
+            hostelName: data.hostel_name || prev.hostelName,
+            room: data.room_no || prev.room,
+            college: data.college_name || prev.college,
+            registerNo: data.register_no || prev.registerNo,
+            city: data.city || prev.city,
+          }));
+        }
+        setError("");
+      } catch (err) {
+        setError(getErrorMessage(err, "Unable to load profile."));
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [data.students, session.studentId]);
+    };
+
+    loadProfile();
+  }, []);
 
   if (loading) {
     return (
@@ -146,6 +159,16 @@ function Profile() {
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
             <div className="form-group">
+              <label className="form-label">Register Number</label>
+              <input className="form-input" value={profileData.registerNo || "Not assigned"} disabled />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">College</label>
+              <input className="form-input" value={profileData.college} disabled />
+            </div>
+
+            <div className="form-group">
               <label className="form-label">Hostel Name</label>
               <input className="form-input" value={profileData.hostelName} disabled />
             </div>
@@ -153,11 +176,6 @@ function Profile() {
             <div className="form-group">
               <label className="form-label">Room Number</label>
               <input className="form-input" value={profileData.room} disabled />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">College</label>
-              <input className="form-input" value={profileData.college} disabled />
             </div>
 
             <div className="form-group">

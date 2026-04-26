@@ -2,21 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import EntityPage from "../components/EntityPage";
 import Table from "../components/Table";
-import { createRecord, fetchCollection, getErrorMessage } from "../services/api";
-
-const bookingColumns = [
-  { header: "ID", accessor: "booking_id" },
-  { header: "Student", accessor: "full_name" },
-  { header: "Room", accessor: "room_no" },
-  { header: "Hostel", accessor: "hostel_name" },
-  { header: "Date", accessor: "booking_date" },
-  {
-    header: "Status",
-    accessor: "status",
-    render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
-  },
-  { header: "AI Suggestion", accessor: "ai_booking_reason" },
-];
+import { fetchCollection, createRecord, getErrorMessage, updateBookingStatus } from "../services/authApi";
 
 const Bookings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -30,8 +16,82 @@ const Bookings = () => {
   });
   const [submitMessage, setSubmitMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [actionLoading, setActionLoading] = useState({});
 
   const isFormOpen = searchParams.get("action") === "new";
+
+  const handleStatusUpdate = async (bookingId, status) => {
+    setActionLoading((prev) => ({ ...prev, [bookingId]: true }));
+    try {
+      await updateBookingStatus(bookingId, status);
+      const data = await fetchCollection("/bookings");
+      setBookings(data);
+      setSubmitMessage(`Booking ${status.toLowerCase()} successfully.`);
+      setTimeout(() => setSubmitMessage(""), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err, `Unable to ${status.toLowerCase()} booking.`));
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [bookingId]: false }));
+    }
+  };
+
+  const bookingColumns = [
+    { header: "ID", accessor: "booking_id" },
+    { header: "Student", accessor: "full_name" },
+    { header: "Room", accessor: "room_no" },
+    { header: "Hostel", accessor: "hostel_name" },
+    { header: "Date", accessor: "booking_date" },
+    {
+      header: "Status",
+      accessor: "status",
+      render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
+    },
+    { header: "AI Suggestion", accessor: "ai_booking_reason" },
+    {
+      header: "Actions",
+      accessor: "booking_id",
+      render: (value, row) => {
+        if (row.status !== "REQUESTED") return null;
+        const isLoading = actionLoading[value];
+        return (
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => handleStatusUpdate(value, "APPROVED")}
+              disabled={isLoading}
+              className="btn btn-sm"
+              style={{
+                background: "#22c55e",
+                color: "white",
+                border: "none",
+                padding: "4px 12px",
+                fontSize: "0.75rem",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.6 : 1,
+              }}
+            >
+              {isLoading ? "..." : "Approve"}
+            </button>
+            <button
+              onClick={() => handleStatusUpdate(value, "REJECTED")}
+              disabled={isLoading}
+              className="btn btn-sm"
+              style={{
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                padding: "4px 12px",
+                fontSize: "0.75rem",
+                cursor: isLoading ? "not-allowed" : "pointer",
+                opacity: isLoading ? 0.6 : 1,
+              }}
+            >
+              {isLoading ? "..." : "Reject"}
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
 
   useEffect(() => {
     let isMounted = true;

@@ -9,6 +9,9 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const roomRoutes = require('./routes/roomRoutes');
 const staffRoutes = require('./routes/staffRoutes');
 const messRoutes = require('./routes/messRoutes');
+const authRoutes = require('./routes/authRoutes');
+const outingRoutes = require('./routes/outingRoutes');
+const complaintAdminRoutes = require('./routes/complaintAdminRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -31,6 +34,9 @@ app.use('/payments', paymentRoutes);
 app.use('/rooms', roomRoutes);
 app.use('/staff', staffRoutes);
 app.use('/mess', messRoutes);
+app.use('/auth', authRoutes);
+app.use('/outings', outingRoutes);
+app.use('/admin/complaints', complaintAdminRoutes);
 
 app.use(errorHandler);
 

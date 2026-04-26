@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { login, getErrorMessage } from "../services/authApi";
 
 function Login({ onLogin }) {
   const [formState, setFormState] = useState({
@@ -8,6 +9,7 @@ function Login({ onLogin }) {
     studentId: "1",
   });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = ({ target: { name, value } }) => {
     setFormState((current) => ({
@@ -16,7 +18,7 @@ function Login({ onLogin }) {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!formState.username.trim() || !formState.password.trim()) {
@@ -25,11 +27,31 @@ function Login({ onLogin }) {
     }
 
     setError("");
-    onLogin({
-      role: formState.role,
-      username: formState.username.trim(),
-      studentId: Number(formState.studentId) || 1,
-    });
+    setIsLoading(true);
+
+    try {
+      const credentials = {
+        role: formState.role,
+        username: formState.username.trim(),
+        password: formState.password,
+        studentId: formState.role === "student" ? Number(formState.studentId) : undefined,
+      };
+
+      const response = await login(credentials);
+
+      onLogin({
+        token: response.token,
+        role: response.role.toLowerCase(),
+        username: response.username,
+        studentId: response.studentId,
+        registerNo: response.registerNo,
+        collegeName: response.collegeName,
+      });
+    } catch (err) {
+      setError(getErrorMessage(err, "Login failed. Please try again."));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -182,8 +204,13 @@ function Login({ onLogin }) {
             </div>
           ) : null}
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>
-            Sign In
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '14px', fontSize: '1rem' }}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
       </div>
