@@ -9,6 +9,7 @@ CREATE TABLE Student (
   register_no VARCHAR(30) NOT NULL UNIQUE,
   full_name VARCHAR(120) NOT NULL,
   college_id INT NOT NULL,
+  password VARCHAR(255),
   CONSTRAINT fk_student_college
     FOREIGN KEY (college_id) REFERENCES College(college_id)
 );
@@ -106,7 +107,4 @@ CREATE TABLE Menu (
   CONSTRAINT uq_menu UNIQUE (mess_id, day_of_week, meal_type)
 );
 
-
 ALTER TABLE Student ADD password VARCHAR(255);
-
-UPDATE Student SET password = '1234' WHERE student_id = 1;

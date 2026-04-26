@@ -57,3 +57,8 @@ INSERT INTO Menu (mess_id, day_of_week, meal_type, items) VALUES
 (2,'MON','BREAKFAST','Dosa, Chutney'),
 (2,'MON','LUNCH','Variety rice, Curd'),
 (2,'MON','DINNER','Idiyappam, Kurma');
+
+-- Set default passwords for all students
+UPDATE Student SET password = '1234' WHERE student_id = 1;
+UPDATE Student SET password = '1234' WHERE student_id = 2;
+UPDATE Student SET password = '1234' WHERE student_id = 3;
