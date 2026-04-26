@@ -20,7 +20,7 @@ function Login({ onLogin }) {
     event.preventDefault();
 
     if (!formState.username.trim() || !formState.password.trim()) {
-      setError("Enter username and password to continue.");
+      setError("Please enter both username and password.");
       return;
     }
 
@@ -33,53 +33,160 @@ function Login({ onLogin }) {
   };
 
   return (
-    <div className="login-page">
-      <section className="login-card">
-        <div className="login-copy">
-          <p className="eyebrow">Access Portal</p>
-          <h1 className="login-title">Hostel Management System</h1>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+      padding: '24px'
+    }}>
+      <div className="card" style={{
+        width: '100%',
+        maxWidth: '440px',
+        padding: '48px',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+            borderRadius: '16px',
+            margin: '0 auto 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontSize: '1.5rem',
+            fontWeight: 'bold',
+            boxShadow: '0 10px 15px -3px rgba(79, 70, 229, 0.4)'
+          }}>HE</div>
+          <h1 style={{ fontSize: '1.75rem', marginBottom: '8px' }}>Welcome back</h1>
+          <p style={{ color: '#64748b' }}>Access the HostelEase portal</p>
         </div>
 
-        {error ? <div className="message message-error">{error}</div> : null}
+        {error ? (
+          <div className="badge badge-danger" style={{
+            display: 'block',
+            padding: '12px',
+            marginBottom: '24px',
+            textAlign: 'center',
+            borderRadius: '8px',
+            textTransform: 'none'
+          }}>
+            {error}
+          </div>
+        ) : null}
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="role-switch">
+        <form onSubmit={handleSubmit}>
+          <div style={{
+            display: 'flex',
+            background: '#f1f5f9',
+            padding: '4px',
+            borderRadius: '10px',
+            marginBottom: '32px'
+          }}>
             <button
               type="button"
-              className={`role-chip ${formState.role === "admin" ? "active" : ""}`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                background: formState.role === "admin" ? 'white' : 'transparent',
+                color: formState.role === "admin" ? '#4f46e5' : '#64748b',
+                boxShadow: formState.role === "admin" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
               onClick={() => setFormState((current) => ({ ...current, role: "admin" }))}
             >
-              Admin
+              Administrator
             </button>
             <button
               type="button"
-              className={`role-chip ${formState.role === "student" ? "active" : ""}`}
+              style={{
+                flex: 1,
+                padding: '10px',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                transition: 'all 0.2s',
+                background: formState.role === "student" ? 'white' : 'transparent',
+                color: formState.role === "student" ? '#4f46e5' : '#64748b',
+                boxShadow: formState.role === "student" ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+              }}
               onClick={() => setFormState((current) => ({ ...current, role: "student" }))}
             >
               Student
             </button>
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="username">Username</label>
-            <input id="username" name="username" className="form-input" value={formState.username} onChange={handleChange} required />
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', fontWeight: '500', color: '#475569' }}>Username</label>
+            <input
+              name="username"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              value={formState.username}
+              onChange={handleChange}
+              placeholder="Enter your username"
+              required
+            />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" className="form-input" value={formState.password} onChange={handleChange} required />
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', fontWeight: '500', color: '#475569' }}>Password</label>
+            <input
+              name="password"
+              type="password"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                outline: 'none'
+              }}
+              value={formState.password}
+              onChange={handleChange}
+              placeholder="••••••••"
+              required
+            />
           </div>
 
           {formState.role === "student" ? (
-            <div className="form-group">
-              <label className="form-label" htmlFor="studentId">Student ID</label>
-              <input id="studentId" name="studentId" type="number" min="1" className="form-input" value={formState.studentId} onChange={handleChange} />
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.875rem', fontWeight: '500', color: '#475569' }}>Student ID</label>
+              <input
+                name="studentId"
+                type="number"
+                min="1"
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #e2e8f0'
+                }}
+                value={formState.studentId}
+                onChange={handleChange}
+              />
             </div>
           ) : null}
 
-          <button type="submit" className="btn btn-primary">Login</button>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '14px', fontSize: '1rem' }}>
+            Sign In
+          </button>
         </form>
-      </section>
+      </div>
     </div>
   );
 }

@@ -4,8 +4,8 @@ const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 
 const apiBaseUrls = [
   configuredBaseUrl,
-  "http://127.0.0.1:5000",
-  "http://localhost:5000",
+  "http://127.0.0.1:5001",
+  "http://localhost:5001",
 ].filter(Boolean);
 
 function normalizeCollection(payload) {
@@ -64,7 +64,7 @@ export function getErrorMessage(error, fallbackMessage = "Unable to load data.")
   }
 
   if (error.code === "ERR_NETWORK") {
-    return "Unable to reach the backend API on port 5000. Make sure the backend server is running.";
+    return "Unable to reach the backend API on port 5001. Make sure the backend server is running.";
   }
 
   return error?.response?.data?.error || error?.message || fallbackMessage;

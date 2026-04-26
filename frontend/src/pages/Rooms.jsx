@@ -1,183 +1,116 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import EntityPage from "../components/EntityPage";
-import Table from "../components/Table";
-import { createRecord, fetchCollection, getErrorMessage } from "../services/api";
+import { useState } from "react";
+import useHostelData from "../hooks/useHostelData";
+import StudentDrawer from "../components/StudentDrawer";
+import RoomDrawer from "../components/RoomDrawer";
 
-const roomColumns = [
-  { header: "ID", accessor: "room_id" },
-  { header: "Room No", accessor: "room_no" },
-  { header: "Capacity", accessor: "capacity" },
-  { header: "Hostel", accessor: "hostel_name" },
-  { header: "Occupancy", accessor: "current_occupancy" },
-  { header: "Status", accessor: "occupancy_status" },
-  { header: "Alert", accessor: "ai_room_alert" },
-];
-
-const Rooms = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [formState, setFormState] = useState({
-    hostel_id: "",
-    room_no: "",
-    capacity: "",
-  });
-  const [submitMessage, setSubmitMessage] = useState("");
-  const [submitError, setSubmitError] = useState("");
-
-  const isFormOpen = searchParams.get("action") === "new";
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadRooms = async () => {
-      try {
-        const data = await fetchCollection("/rooms");
-        if (!isMounted) return;
-        setRooms(data);
-        setError("");
-      } catch (err) {
-        if (!isMounted) return;
-        setRooms([]);
-        setError(getErrorMessage(err, "Unable to load rooms."));
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadRooms();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const openForm = () => {
-    setSearchParams({ action: "new" });
-    setSubmitMessage("");
-    setSubmitError("");
-  };
-
-  const closeForm = () => {
-    setSearchParams({});
-    setSubmitError("");
-  };
-
-  const handleChange = ({ target: { name, value } }) => {
-    setFormState((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-
-    try {
-      await createRecord("/rooms", {
-        ...formState,
-        hostel_id: Number(formState.hostel_id),
-        capacity: Number(formState.capacity),
-      });
-
-      const data = await fetchCollection("/rooms");
-      setRooms(data);
-      setFormState({
-        hostel_id: "",
-        room_no: "",
-        capacity: "",
-      });
-      setSubmitError("");
-      setSubmitMessage("Room saved successfully.");
-      setSearchParams({});
-    } catch (err) {
-      setSubmitMessage("");
-      setSubmitError(getErrorMessage(err, "Unable to save room."));
-    }
-  };
+function Rooms() {
+  const { data, loading, error } = useHostelData(["rooms", "students", "complaints"]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
 
   if (loading) {
-    return <p className="loading">Loading rooms...</p>;
+    return <div className="loading" style={{ padding: '100px', textAlign: 'center' }}>Analyzing room inventory...</div>;
   }
 
+  const getStudentsInRoom = (roomId) => {
+    return data.students.filter(s => s.room_id === roomId);
+  };
+
+  const getComplaintsInRoom = (roomId) => {
+    return data.complaints.filter(c => c.room_id === roomId);
+  };
+
   return (
-    <EntityPage
-      title="Rooms"
-      description="Track room inventory and add new rooms with their hostel and capacity."
-      actionLabel="New Room"
-      isFormOpen={isFormOpen}
-      onOpenForm={openForm}
-      onCloseForm={closeForm}
-      formTitle="Add room"
-      formDescription="Enter the hostel ID, room number, and supported capacity."
-      message={submitError || error || submitMessage}
-      messageType={submitError || error ? "error" : "success"}
-      formContent={
-        <form onSubmit={handleSubmit}>
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label" htmlFor="hostel_id">
-                Hostel ID
-              </label>
-              <input
-                id="hostel_id"
-                name="hostel_id"
-                type="number"
-                min="1"
-                className="form-input"
-                value={formState.hostel_id}
-                onChange={handleChange}
-                required
-              />
+    <div className="page-container" style={{ paddingBottom: '100px' }}>
+      <header className="page-header-card" style={{ marginBottom: '48px' }}>
+        <div>
+          <h1 className="page-title">Room Inventory</h1>
+          <p className="page-description">
+            Monitor occupancy, maintenance issues, and resident details across all hostels.
+          </p>
+        </div>
+      </header>
+
+      {error ? <div className="badge badge-danger" style={{ marginBottom: '24px' }}>{error}</div> : null}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
+        {data.rooms.map(room => {
+          const roomComplaints = getComplaintsInRoom(room.room_id);
+
+          return (
+            <div 
+              key={room.room_id} 
+              className="card room-card"
+              style={{ 
+                padding: '24px', 
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+                border: '1px solid var(--border)',
+                position: 'relative'
+              }}
+              onClick={() => setSelectedRoom(room)}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0 }}>Room {room.room_no}</h3>
+                <span className={`badge ${room.occupancy_status === 'FULL' ? 'badge-danger' : 'badge-success'}`}>
+                  {room.occupancy_status}
+                </span>
+              </div>
+              
+              <p style={{ color: 'var(--secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+                {room.hostel_name} • {room.current_occupancy}/{room.capacity} Beds
+              </p>
+
+              {roomComplaints.length > 0 && (
+                <div className="alert-strip">
+                  ⚠️ {roomComplaints.length} Issues
+                </div>
+              )}
+              
+              <div className="card-footer-hint">View Details ›</div>
             </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="room_no">
-                Room Number
-              </label>
-              <input
-                id="room_no"
-                name="room_no"
-                className="form-input"
-                value={formState.room_no}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label" htmlFor="capacity">
-                Capacity
-              </label>
-              <input
-                id="capacity"
-                name="capacity"
-                type="number"
-                min="1"
-                max="8"
-                className="form-input"
-                value={formState.capacity}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Save Room
-            </button>
-          </div>
-        </form>
-      }
-    >
-      <div className="section-heading">
-        <h2 className="card-title">Room list</h2>
+          );
+        })}
       </div>
-      <Table columns={roomColumns} data={rooms} />
-    </EntityPage>
+
+      <RoomDrawer 
+        room={selectedRoom}
+        students={selectedRoom ? getStudentsInRoom(selectedRoom.room_id) : []}
+        complaints={selectedRoom ? getComplaintsInRoom(selectedRoom.room_id) : []}
+        onClose={() => setSelectedRoom(null)}
+        onOpenStudent={(student) => setSelectedStudent(student)}
+      />
+
+      <StudentDrawer 
+        student={selectedStudent} 
+        onClose={() => setSelectedStudent(null)} 
+      />
+
+      <style>{`
+        .room-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 30px rgba(26, 38, 52, 0.1);
+          border-color: var(--secondary) !important;
+        }
+        .alert-strip {
+          background: #fff5f5;
+          color: #c53030;
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 0.85rem;
+          font-weight: 700;
+        }
+        .card-footer-hint {
+          margin-top: 16px;
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: var(--secondary);
+          text-transform: uppercase;
+          text-align: right;
+        }
+      `}</style>
+    </div>
   );
-};
+}
 
 export default Rooms;

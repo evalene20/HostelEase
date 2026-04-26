@@ -6,18 +6,27 @@ import { formatCurrency, getAdminInsights, getAdminMetrics } from "../../utils/d
 function InsightList({ title, items, emptyMessage = "No alerts right now." }) {
   return (
     <section className="card">
-      <div className="card-header">
-        <h2 className="card-title">{title}</h2>
-      </div>
-      <div className="list-stack">
+      <h3 style={{ marginBottom: "24px", fontSize: "1.1rem" }}>{title}</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         {items.length ? (
-          items.map((item) => (
-            <div key={item} className="list-row">
+          items.map((item, idx) => (
+            <div
+              key={idx}
+              style={{
+                padding: "16px",
+                background: "#f8fafc",
+                borderRadius: "8px",
+                borderLeft: "4px solid #4f46e5",
+                fontSize: "0.95rem",
+              }}
+            >
               {item}
             </div>
           ))
         ) : (
-          <div className="table-empty">{emptyMessage}</div>
+          <div style={{ color: "#94a3b8", padding: "20px", textAlign: "center" }}>
+            {emptyMessage}
+          </div>
         )}
       </div>
     </section>
@@ -31,7 +40,11 @@ function AdminDashboard() {
   const insights = useMemo(() => getAdminInsights(data), [data]);
 
   if (loading) {
-    return <p className="loading">Loading admin dashboard...</p>;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh" }}>
+        <p className="loading">Loading intelligent insights...</p>
+      </div>
+    );
   }
 
   const smartAlerts = [
@@ -48,68 +61,77 @@ function AdminDashboard() {
 
   const bookingSuggestions = data.bookings
     .filter((booking) => booking.status === "REQUESTED")
-    .slice(0, 3)
-    .map((booking) => {
-      const room = data.rooms.find((candidate) => Number(candidate.room_id) === Number(booking.room_id));
-      return room?.occupancy_status === "FULL"
-        ? `Reject suggestion: ${booking.full_name}'s request for ${booking.room_no} because the room is full.`
-        : `Approve suggestion: ${booking.full_name}'s request for ${booking.room_no} because capacity is still available.`;
-    });
-
-  const predictiveMaintenance = insights.nearFullRooms.slice(0, 4).map((room) => {
-    return `${room.room_no} (${room.hostel_name}) should be monitored for overcrowding risk.`;
-  });
+    .map(
+      (booking) =>
+        `${booking.ai_booking_decision}: ${booking.full_name}'s request for ${booking.room_no}. ${booking.ai_booking_reason}`
+    );
 
   return (
-    <div className="page-shell">
-      <section className="page-header-card">
-        <div>
-          <p className="eyebrow">Admin Dashboard</p>
-          <h1 className="page-title">Operational analytics and intelligent alerts</h1>
-          <p className="page-description">
-            This dashboard combines room occupancy, complaint hotspots, payment
-            health, and decision support for approvals and maintenance.
-          </p>
-        </div>
-        <div className="dashboard-pill">
-          <span>Occupancy</span>
-          <strong>{metrics.occupancyRate}%</strong>
-        </div>
-      </section>
+    <div className="page-container" style={{ paddingBottom: "100px" }}>
+      <header
+        className="section-header"
+        style={{ marginBottom: "48px", flexDirection: "column", alignItems: "flex-start" }}
+      >
+        <h1 style={{ marginBottom: "8px" }}>Admin Overview</h1>
+        <p style={{ fontSize: "1.1rem", maxWidth: "800px" }}>
+          Operational analytics and intelligent alerts. Monitor room occupancy, complaint hotspots, and payment
+          health in real-time.
+        </p>
+      </header>
 
-      {error ? <div className="message message-error">{error}</div> : null}
+      {error ? (
+        <div
+          className="badge badge-danger"
+          style={{ marginBottom: "24px", display: "block", textAlign: "center", padding: "12px" }}
+        >
+          {error}
+        </div>
+      ) : null}
 
-      <div className="stats-grid">
-        <Card title="Students" value={metrics.totalStudents} subtitle="Active student records" color="primary" />
-        <Card title="Rooms" value={metrics.totalRooms} subtitle={`${metrics.availableBeds} beds available`} color="success" />
-        <Card title="Complaints" value={metrics.totalComplaints} subtitle="Issues under monitoring" color="danger" />
-        <Card title="Revenue" value={formatCurrency(metrics.totalRevenue)} subtitle="Successful collections" color="info" />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "24px",
+          marginBottom: "48px",
+        }}
+      >
+        <Card title="Total Students" value={metrics.totalStudents} subtitle="Active enrollments" color="primary" />
+        <Card title="Available Beds" value={metrics.availableBeds} subtitle={`Across ${metrics.totalRooms} rooms`} color="success" />
+        <Card title="Open Issues" value={metrics.totalComplaints} subtitle="Awaiting resolution" color="danger" />
+        <Card title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} subtitle="Current semester" color="info" />
       </div>
 
-      <section className="dashboard-grid dashboard-grid-wide">
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))",
+          gap: "32px",
+          marginBottom: "48px",
+        }}
+      >
         <InsightList title="Smart Alerts" items={smartAlerts} />
-        <InsightList title="Booking Recommendations" items={bookingSuggestions} emptyMessage="No pending booking requests right now." />
-        <InsightList title="Predictive Maintenance" items={predictiveMaintenance} emptyMessage="No room is close to overcrowding right now." />
-      </section>
+        <InsightList title="AI Booking Recommendations" items={bookingSuggestions} emptyMessage="No pending requests." />
+      </div>
 
       <section className="card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">High-risk students</h2>
-            <p className="section-description">
-              Repeated complaints or payment issues are surfaced here for admin review.
-            </p>
-          </div>
+        <div style={{ marginBottom: "32px" }}>
+          <h2 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Behavioral Risk Monitoring</h2>
+          <p style={{ color: "#64748b" }}>Surfacing students with repeated complaints or payment issues.</p>
         </div>
-        <div className="chip-grid">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
           {insights.highRiskStudents.length ? (
             insights.highRiskStudents.map((student) => (
-              <span key={student.student_id} className="info-chip">
+              <div
+                key={student.student_id}
+                className="badge badge-warning"
+                style={{ padding: "8px 16px", fontSize: "0.9rem" }}
+              >
                 {student.full_name}
-              </span>
+              </div>
             ))
           ) : (
-            <div className="table-empty">No high-risk student patterns detected.</div>
+            <p style={{ color: "#94a3b8" }}>All students are within normal behavioral parameters.</p>
           )}
         </div>
       </section>

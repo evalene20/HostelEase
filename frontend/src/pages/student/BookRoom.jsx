@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import useHostelData from "../../hooks/useHostelData";
-import { createRecord, fetchCollection, getErrorMessage } from "../../services/api";
+import { createRecord, getErrorMessage } from "../../services/api";
 import { getRecommendedRoom, getStudentRecord } from "../../utils/dashboardInsights";
 
 function BookRoom() {
   const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error, refresh } = useHostelData();
   const [roomId, setRoomId] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [message, setMessage] = useState("");
@@ -43,7 +43,7 @@ function BookRoom() {
         booking_date: bookingDate,
       });
 
-      await fetchCollection("/bookings");
+      await refresh();
       setMessage("Booking request submitted successfully.");
       setSubmitError("");
       setRoomId("");

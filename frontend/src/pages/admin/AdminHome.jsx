@@ -1,58 +1,89 @@
 import { Link } from "react-router-dom";
 
-const adminSections = [
-  { title: "Dashboard", description: "Analytics, alerts, and smart operational insights.", to: "/admin/dashboard" },
-  { title: "Students", description: "Manage student records, history, and room assignments.", to: "/admin/students" },
-  { title: "Rooms", description: "Track capacity, occupancy, and overcrowding risk.", to: "/admin/rooms" },
-  { title: "Bookings", description: "Review requests and apply approval suggestions.", to: "/admin/bookings" },
-  { title: "Complaints", description: "Prioritize issues and assign support staff.", to: "/admin/complaints" },
-  { title: "Payments", description: "Watch revenue, dues, and payment failures.", to: "/admin/payments" },
-  { title: "Staff", description: "Manage wardens, supervisors, and maintenance staff.", to: "/admin/staff" },
+const quickActions = [
+  {
+    title: "Create booking",
+    description: "Reserve a room for a student and capture the booking date.",
+    to: "/admin/bookings?action=new",
+  },
+  {
+    title: "Register student",
+    description: "Add a student profile before assigning rooms or taking payments.",
+    to: "/admin/students?action=new",
+  },
+  {
+    title: "Log complaint",
+    description: "Record hostel issues quickly so staff can respond faster.",
+    to: "/admin/complaints?action=new",
+  },
+  {
+    title: "Record payment",
+    description: "Add a payment entry and track its settlement status.",
+    to: "/admin/payments?action=new",
+  },
 ];
 
 function AdminHome() {
   return (
-    <div className="page-shell">
-      <section className="home-hero">
-        <div className="home-copy">
-          <p className="eyebrow">Admin Control Center</p>
-          <h1 className="hero-title">Run the hostel from one operational home.</h1>
-          <p className="hero-description">
-            Monitor occupancy, bookings, complaints, revenue, staff assignments,
-            mess operations, and risk signals from a single admin workspace.
+    <div className="page-container" style={{ paddingBottom: '100px' }}>
+      <section style={{ 
+        background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+        padding: '80px 48px',
+        borderRadius: '24px',
+        color: 'white',
+        marginBottom: '60px',
+        boxShadow: '0 20px 40px rgba(79, 70, 229, 0.2)'
+      }}>
+        <div style={{ maxWidth: '800px' }}>
+          <span style={{ 
+            background: 'rgba(255,255,255,0.2)', 
+            padding: '6px 16px', 
+            borderRadius: '20px', 
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            marginBottom: '24px',
+            display: 'inline-block'
+          }}>HostelEase Administrator Portal</span>
+          <h1 style={{ fontSize: '3rem', color: 'white', marginBottom: '24px', lineHeight: '1.2' }}>
+            Manage your daily hostel operations with ease.
+          </h1>
+          <p style={{ fontSize: '1.25rem', opacity: '0.9', marginBottom: '40px' }}>
+            A unified platform for student onboarding, room allocation, issue tracking, and financial monitoring.
           </p>
-          <div className="hero-actions">
-            <Link to="/admin/dashboard" className="btn btn-primary">
-              Open Admin Dashboard
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <Link to="/admin/dashboard" className="btn btn-outline" style={{ background: 'white', border: 'none' }}>
+              Launch Dashboard
             </Link>
-          </div>
-        </div>
-
-        <div className="home-highlight">
-          <div className="highlight-card">
-            <span className="highlight-label">Admin novelty layer</span>
-            <strong>Rules, alerts, and recommendations built into the workflow</strong>
-            <p>
-              Spot overcrowding, repeated complaints, payment risk, and likely booking
-              approvals without leaving the dashboard.
-            </p>
+            <Link to="/admin/bookings?action=new" className="btn" style={{ color: 'white', border: '1px solid rgba(255,255,255,0.4)' }}>
+              Quick Booking
+            </Link>
           </div>
         </div>
       </section>
 
-      <section className="card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">Admin sections</h2>
-            <p className="section-description">
-              Kept minimal because the top navbar already gives direct access to every admin section.
-            </p>
-          </div>
+      <section>
+        <div className="section-header" style={{ marginBottom: '32px' }}>
+          <h2>Quick Actions</h2>
+          <p style={{ color: '#64748b' }}>Start a task and jump straight into record entry.</p>
         </div>
-        <div className="chip-grid">
-          {adminSections.map((section) => (
-            <Link key={section.title} to={section.to} className="minimal-link">
-              {section.title}
+
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
+          gap: '24px' 
+        }}>
+          {quickActions.map((action) => (
+            <Link key={action.title} to={action.to} className="card" style={{ 
+              textDecoration: 'none', 
+              color: 'inherit',
+              transition: 'transform 0.2s',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <span style={{ color: '#4f46e5', fontWeight: '700', fontSize: '0.8rem', textTransform: 'uppercase' }}>Shortcut</span>
+              <h3 style={{ marginBottom: '8px' }}>{action.title}</h3>
+              <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>{action.description}</p>
             </Link>
           ))}
         </div>

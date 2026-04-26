@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchCollection, getErrorMessage } from "../services/api";
 
 const endpointMap = {
@@ -19,10 +19,29 @@ function useHostelData(keys = Object.keys(endpointMap)) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const load = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const entries = await Promise.all(
+        keys.map(async (key) => [key, await fetchCollection(endpointMap[key])])
+      );
+
+      setData(Object.fromEntries(entries));
+      setError("");
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to load dashboard data."));
+    } finally {
+      setLoading(false);
+    }
+  }, [dependencyKey]);
+
   useEffect(() => {
     let isMounted = true;
 
-    const load = async () => {
+    const loadSafely = async () => {
+      setLoading(true);
+
       try {
         const entries = await Promise.all(
           keys.map(async (key) => [key, await fetchCollection(endpointMap[key])])
@@ -42,14 +61,14 @@ function useHostelData(keys = Object.keys(endpointMap)) {
       }
     };
 
-    load();
+    loadSafely();
 
     return () => {
       isMounted = false;
     };
   }, [dependencyKey]);
 
-  return { data, loading, error };
+  return { data, loading, error, refresh: load };
 }
 
 export default useHostelData;

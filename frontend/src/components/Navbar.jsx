@@ -1,37 +1,50 @@
 import { Link, NavLink } from "react-router-dom";
 import "./Navbar.css";
 
-function Navbar({ username, role, navItems, homePath, onLogout }) {
+function Navbar({ navItems, homePath, settingsPath, isCollapsed, toggleSidebar }) {
+  if (isCollapsed) {
+    return (
+      <button className="collapsed-sidebar-btn" onClick={toggleSidebar} title="Expand Menu">
+        HE
+      </button>
+    );
+  }
+
   return (
-    <header className="navbar">
-      <div className="navbar-content">
-        <Link to={homePath} className="navbar-logo">
-          <span className="logo-icon">SH</span>
-          <span className="logo-text">Smart Hostel</span>
+    <aside className="sidebar">
+      <div className="sidebar-header">
+        <Link to={homePath} className="sidebar-logo">
+          <div className="logo-icon">HE</div>
+          <span className="logo-text">HostelEase</span>
         </Link>
-
-        <nav className="top-nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) => `top-nav-link ${isActive ? "active" : ""}`}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="navbar-actions">
-          <span className="navbar-user">
-            {role === "admin" ? "Admin" : "Student"}: {username}
-          </span>
-          <button type="button" className="btn btn-secondary btn-small" onClick={onLogout}>
-            Logout
-          </button>
-        </div>
+        <button className="sidebar-toggle" onClick={toggleSidebar} title="Collapse Menu">
+          ←
+        </button>
       </div>
-    </header>
+
+      <nav className="sidebar-nav">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+          >
+            <span className="nav-icon">{item.label[0]}</span>
+            <span className="nav-label">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="sidebar-footer">
+        <NavLink
+          to={settingsPath}
+          className={({ isActive }) => `nav-link settings-link ${isActive ? "active" : ""}`}
+        >
+          <span className="nav-icon">⚙</span>
+          <span className="nav-label">Settings</span>
+        </NavLink>
+      </div>
+    </aside>
   );
 }
 

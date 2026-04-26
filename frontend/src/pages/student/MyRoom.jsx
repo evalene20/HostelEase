@@ -11,7 +11,7 @@ function MyRoom() {
   const { data, loading, error } = useHostelData();
 
   if (loading) {
-    return <p className="loading">Loading room details...</p>;
+    return <div className="loading" style={{ padding: '100px', textAlign: 'center' }}>Retrieving room details...</div>;
   }
 
   const student = getStudentRecord(data.students, session.studentId);
@@ -27,53 +27,91 @@ function MyRoom() {
   });
 
   return (
-    <div className="page-shell">
-      <section className="page-header-card">
+    <div className="page-container" style={{ paddingBottom: '100px' }}>
+      <header className="page-header-card" style={{ marginBottom: '48px' }}>
         <div>
-          <p className="eyebrow">My Room</p>
-          <h1 className="page-title">Room, booking, and occupancy details</h1>
+          <h1 className="page-title">My Room</h1>
           <p className="page-description">
-            View current room allocation, booking history, occupancy, and room-change suggestion.
+            Your current living space, occupancy details, and history.
           </p>
         </div>
-      </section>
-      {error ? <div className="message message-error">{error}</div> : null}
+      </header>
 
-      <div className="dashboard-grid dashboard-grid-wide">
-        <section className="card">
-          <div className="card-header"><h2 className="card-title">Current allocation</h2></div>
-          <div className="detail-grid">
-            <div><span>Hostel</span><strong>{currentBooking?.hostel_name || "Not assigned"}</strong></div>
-            <div><span>Room</span><strong>{currentBooking?.room_no || "--"}</strong></div>
-            <div><span>Status</span><strong>{currentBooking?.status || "NONE"}</strong></div>
-            <div><span>Occupancy</span><strong>{currentRoom ? `${currentRoom.current_occupancy}/${currentRoom.capacity}` : "--"}</strong></div>
-          </div>
-        </section>
+      {error ? <div className="badge badge-danger" style={{ marginBottom: '24px' }}>{error}</div> : null}
 
-        <section className="card">
-          <div className="card-header"><h2 className="card-title">Booking history</h2></div>
-          <div className="list-stack">
-            {bookings.length ? bookings.map((booking) => (
-              <div key={booking.booking_id} className="list-row">
-                {booking.booking_date}: {booking.room_no} / {booking.hostel_name} / {booking.status}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+        <div>
+          <section className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <img 
+              src="/room photo.jpeg" 
+              alt="Room" 
+              style={{ width: '100%', height: '300px', objectFit: 'cover' }} 
+            />
+            <div style={{ padding: '32px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ margin: 0 }}>Room {currentBooking?.room_no || "TBD"}</h2>
+                <span className="badge badge-success">{currentBooking?.hostel_name || "Unassigned"}</span>
               </div>
-            )) : <div className="table-empty">No booking history yet.</div>}
-          </div>
-        </section>
-
-        <section className="card">
-          <div className="card-header"><h2 className="card-title">Room change request idea</h2></div>
-          {recommendation ? (
-            <div className="list-stack">
-              <div className="list-row">Recommended room: {recommendation.room_no}</div>
-              {recommendation.reasons.map((reason) => (
-                <div key={reason} className="list-row">{reason}</div>
-              ))}
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div className="form-group">
+                  <label className="form-label">Occupancy</label>
+                  <p style={{ fontSize: '1.2rem', fontWeight: '700' }}>
+                    {currentRoom ? `${currentRoom.current_occupancy} / ${currentRoom.capacity}` : "0 / 0"} Beds
+                  </p>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Room Type</label>
+                  <p style={{ fontSize: '1.2rem', fontWeight: '700' }}>
+                    {currentRoom?.capacity > 2 ? 'AC Premium' : 'Non-AC Standard'}
+                  </p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="table-empty">No upgrade suggestion available.</div>
-          )}
-        </section>
+          </section>
+
+          <section className="card" style={{ marginTop: '32px' }}>
+            <h3 style={{ marginBottom: '20px' }}>Room Change Suggestion</h3>
+            {recommendation ? (
+              <div style={{ padding: '20px', background: '#fdfcfb', borderRadius: '12px', border: '1px solid #D9C5B2' }}>
+                <p style={{ fontWeight: '700', marginBottom: '12px' }}>Recommended: Room {recommendation.room_no}</p>
+                <ul style={{ paddingLeft: '20px', color: '#5a6b5c' }}>
+                  {recommendation.reasons.map((reason, i) => (
+                    <li key={i} style={{ marginBottom: '8px' }}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p style={{ color: '#94a3b8' }}>You are in the best available room for your profile.</p>
+            )}
+          </section>
+        </div>
+
+        <div>
+          <section className="card">
+            <h3 style={{ marginBottom: '24px' }}>Booking History</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {bookings.length ? bookings.map((booking) => (
+                <div key={booking.booking_id} style={{ 
+                  padding: '16px', 
+                  border: '1px solid #f1ede8', 
+                  borderRadius: '10px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: '700' }}>{booking.hostel_name} - Room {booking.room_no}</div>
+                    <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Requested on {booking.booking_date}</div>
+                  </div>
+                  <span className={`badge ${booking.status === 'APPROVED' ? 'badge-success' : 'badge-warning'}`}>
+                    {booking.status}
+                  </span>
+                </div>
+              )) : <p style={{ color: '#94a3b8' }}>No booking records found.</p>}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );

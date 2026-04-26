@@ -1,24 +1,15 @@
 import "./Card.css";
 
-function Card({ title, value, subtitle, icon, color = "default" }) {
-  const colorClasses = {
-    default: "",
-    primary: "card-primary",
-    success: "card-success",
-    warning: "card-warning",
-    danger: "card-danger",
-    info: "card-info",
-  };
-
+function Card({ title, value, subtitle, color = "default" }) {
   return (
-    <div className={`card stat-card ${colorClasses[color] || ""}`}>
-      <div className="card-content">
-        {icon && <span className="card-icon">{icon}</span>}
-        <div className="stat-card-info">
-          <div className="card-value">{value}</div>
-          <div className="card-title">{title}</div>
-          {subtitle && <div className="card-subtitle">{subtitle}</div>}
-        </div>
+    <div className={`stat-card stat-card-${color}`}>
+      <div className="stat-card-header">
+        <span className="stat-card-title">{title}</span>
+        <div className={`stat-card-indicator indicator-${color}`}></div>
+      </div>
+      <div className="stat-card-body">
+        <h3 className="stat-card-value">{value}</h3>
+        {subtitle && <p className="stat-card-subtitle">{subtitle}</p>}
       </div>
     </div>
   );

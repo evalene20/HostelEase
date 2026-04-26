@@ -6,7 +6,7 @@ import { getAutoPriority, getStudentComplaints, getStudentRecord } from "../../u
 
 function StudentComplaints() {
   const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error, refresh } = useHostelData();
   const [formState, setFormState] = useState({
     complaint_type: "WATER",
     complaint_date: "",
@@ -49,6 +49,7 @@ function StudentComplaints() {
         priority: predictedPriority,
       });
 
+      await refresh();
       setMessage("Complaint submitted successfully.");
       setSubmitError("");
       setFormState({

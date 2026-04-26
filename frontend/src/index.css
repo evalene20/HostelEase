@@ -1,46 +1,168 @@
+@font-face {
+  font-family: 'Barter';
+  src: url('./fonts/Barter.ttf') format('truetype'),
+       url('./fonts/Barter.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 :root {
-  --text: #9db0c8;
-  --text-h: #f8fafc;
-  --bg: #06141f;
-  --surface: #0d1e2b;
-  --border: #173042;
-  --code-bg: #1e293b;
-  --accent: #f59e0b;
-  --accent-bg: rgba(245, 158, 11, 0.1);
-  --accent-border: rgba(245, 158, 11, 0.25);
-  --social-bg: rgba(245, 158, 11, 0.15);
-  --shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
-  --sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-  font: 18px/145% var(--sans);
-  color: var(--text);
-  background: var(--bg);
-  color-scheme: dark;
+  --primary: #1A2634;
+  --secondary: #6B7E6E;
+  --tertiary: #D9C5B2;
+  --neutral: #2C2C2C;
+  --background: transparent; /* Changed to transparent to show layout background image */
+  --surface: rgba(255, 255, 255, 0.4); 
+  --card-bg: #ffffff;
+  --text-main: #1A2634;
+  --text-light: #ffffff;
+  --text-muted: #5a6b5c;
+  --border: rgba(26, 38, 52, 0.1);
+  --radius: 16px;
+  --shadow: 0 10px 15px -3px rgba(26, 38, 52, 0.05);
 }
 
 * {
   box-sizing: border-box;
-}
-
-html {
-  background:
-    radial-gradient(circle at top, rgba(14, 165, 233, 0.14), transparent 30%),
-    linear-gradient(180deg, #05111b 0%, #06141f 100%);
+  margin: 0;
+  padding: 0;
 }
 
 body {
-  margin: 0;
-  background: transparent;
+  font-family: 'Barter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--text-main);
+  background-color: var(--background);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
-a,
-button,
-input,
-select,
-textarea {
-  font: inherit;
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Barter', sans-serif;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 1rem;
 }
 
-#root {
-  min-height: 100vh;
+h1 { font-size: 2.5rem; letter-spacing: -0.02em; }
+h2 { font-size: 1.75rem; }
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Page Container */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Card Overrides for visibility on Taupe */
+.card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 40px;
+  border: 1px solid rgba(26, 38, 52, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 32px;
+}
+
+/* Tables */
+.table-wrapper {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid rgba(26, 38, 52, 0.05);
+  overflow: hidden;
+}
+
+th {
+  background: #f1ede8; /* Slightly darker than background for headers */
+  color: var(--primary);
+  padding: 20px 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1ede8;
+}
+
+/* Form Styles for Profile/Settings */
+.section-header, 
+.page-header-card {
+  margin-bottom: 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--primary);
+  padding: 48px;
+  border-radius: var(--radius);
+  color: white;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.section-header h1, 
+.section-header h2, 
+.section-header p,
+.page-header-card h1,
+.page-header-card h2,
+.page-header-card p,
+.page-header-card .page-title,
+.page-header-card .page-description,
+.page-header-card .eyebrow {
+  color: white !important;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: var(--secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.form-input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  border: none;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--neutral);
+  transform: translateY(-1px);
 }

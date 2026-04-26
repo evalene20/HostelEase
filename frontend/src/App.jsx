@@ -2,10 +2,8 @@ import { useEffect, useState } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
-import AdminHome from "./pages/admin/AdminHome";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import Staff from "./pages/admin/Staff";
-import StudentHome from "./pages/student/StudentHome";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import Profile from "./pages/student/Profile";
 import MyRoom from "./pages/student/MyRoom";
@@ -21,9 +19,7 @@ import Complaints from "./pages/Complaints";
 import Payments from "./pages/Payments";
 
 const adminNavItems = [
-  { path: "/admin/home", label: "Home" },
   { path: "/admin/dashboard", label: "Dashboard" },
-  { path: "/admin/students", label: "Students" },
   { path: "/admin/rooms", label: "Rooms" },
   { path: "/admin/bookings", label: "Bookings" },
   { path: "/admin/complaints", label: "Complaints" },
@@ -32,9 +28,7 @@ const adminNavItems = [
 ];
 
 const studentNavItems = [
-  { path: "/student/home", label: "Home" },
   { path: "/student/dashboard", label: "Dashboard" },
-  { path: "/student/profile", label: "Profile" },
   { path: "/student/room", label: "My Room" },
   { path: "/student/book-room", label: "Book Room" },
   { path: "/student/complaints", label: "Complaints" },
@@ -48,7 +42,7 @@ function getDefaultPath(session) {
     return "/login";
   }
 
-  return session.role === "admin" ? "/admin/home" : "/student/home";
+  return session.role === "admin" ? "/admin/dashboard" : "/student/dashboard";
 }
 
 function ProtectedLayout({ session, role, onLogout }) {
@@ -65,7 +59,8 @@ function ProtectedLayout({ session, role, onLogout }) {
       session={session}
       onLogout={onLogout}
       navItems={role === "admin" ? adminNavItems : studentNavItems}
-      homePath={role === "admin" ? "/admin/home" : "/student/home"}
+      homePath={role === "admin" ? "/admin/dashboard" : "/student/dashboard"}
+      settingsPath={role === "admin" ? "/admin/settings" : "/student/settings"}
     />
   );
 }
@@ -122,7 +117,6 @@ function App() {
         />
 
         <Route element={<ProtectedLayout session={session} role="admin" onLogout={handleLogout} />}>
-          <Route path="/admin/home" element={<AdminHome />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/students" element={<Students />} />
           <Route path="/admin/rooms" element={<Rooms />} />
@@ -130,18 +124,18 @@ function App() {
           <Route path="/admin/complaints" element={<Complaints />} />
           <Route path="/admin/payments" element={<Payments />} />
           <Route path="/admin/staff" element={<Staff />} />
+          <Route path="/admin/settings" element={<Profile />} />
         </Route>
 
         <Route element={<ProtectedLayout session={session} role="student" onLogout={handleLogout} />}>
-          <Route path="/student/home" element={<StudentHome />} />
           <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/profile" element={<Profile />} />
           <Route path="/student/room" element={<MyRoom />} />
           <Route path="/student/book-room" element={<BookRoom />} />
           <Route path="/student/complaints" element={<StudentComplaints />} />
           <Route path="/student/payments" element={<StudentPayments />} />
           <Route path="/student/mess" element={<Mess />} />
           <Route path="/student/outing" element={<Outing />} />
+          <Route path="/student/settings" element={<Profile />} />
         </Route>
       </Routes>
     </BrowserRouter>
