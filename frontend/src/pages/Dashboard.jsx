@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
-import { fetchCollection, getErrorMessage } from "../services/authApi";
+import { fetchCollection, getErrorMessage, getProfile } from "../services/authApi";
 
 function ChartCard({ title, subtitle, items, formatter = (value) => value }) {
   const maxValue = Math.max(...items.map((item) => item.value), 1);
@@ -34,13 +34,13 @@ function ChartCard({ title, subtitle, items, formatter = (value) => value }) {
 }
 
 function Dashboard() {
-  const [collections, setCollections] = useState({
-    students: [],
-    rooms: [],
+  const [data, setData] = useState({
+    profile: null,
     bookings: [],
     complaints: [],
     payments: [],
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -49,9 +49,9 @@ function Dashboard() {
 
     const loadDashboard = async () => {
       try {
-        const [students, rooms, bookings, complaints, payments] = await Promise.all([
-          fetchCollection("/students"),
-          fetchCollection("/rooms"),
+        const profileRes = await getProfile();
+
+        const [bookings, complaints, payments] = await Promise.all([
           fetchCollection("/bookings"),
           fetchCollection("/complaints"),
           fetchCollection("/payments"),
@@ -59,15 +59,19 @@ function Dashboard() {
 
         if (!isMounted) return;
 
-        setCollections({ students, rooms, bookings, complaints, payments });
+        setData({
+          profile: profileRes.data || profileRes,
+          bookings,
+          complaints,
+          payments,
+        });
+
         setError("");
       } catch (err) {
         if (!isMounted) return;
         setError(getErrorMessage(err, "Unable to load the dashboard."));
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
@@ -79,56 +83,45 @@ function Dashboard() {
   }, []);
 
   const metrics = useMemo(() => {
-    const totalCapacity = collections.rooms.reduce(
-      (sum, room) => sum + Number(room.capacity || 0),
-      0
-    );
-    const approvedBookings = collections.bookings.filter(
-      (booking) => booking.status === "APPROVED"
-    ).length;
-    const occupancyRate = totalCapacity
-      ? Math.round((approvedBookings / totalCapacity) * 100)
-      : 0;
+    const profile = data.profile || {};
 
     return {
-      students: collections.students.length,
-      rooms: collections.rooms.length,
-      bookings: collections.bookings.length,
-      complaints: collections.complaints.length,
-      payments: collections.payments.length,
-      occupancyRate,
-      totalCapacity,
-      approvedBookings,
+      students: 1, // always 1 for student
+      rooms: profile.room_no ? 1 : 0,
+      bookings: data.bookings.length,
+      complaints: data.complaints.length,
+      payments: data.payments.length,
+      occupancyRate: profile.room_no ? 100 : 0,
+      totalCapacity: profile.capacity || 0,
+      approvedBookings: data.bookings.filter(
+        (b) => b.status === "APPROVED"
+      ).length,
     };
-  }, [collections]);
+  }, [data]);
 
   const bookingChart = useMemo(() => {
     const statuses = ["REQUESTED", "APPROVED", "REJECTED", "CANCELLED"];
     return statuses.map((status) => ({
       label: status,
-      value: collections.bookings.filter((booking) => booking.status === status).length,
+      value: data.bookings.filter((b) => b.status === status).length,
     }));
-  }, [collections.bookings]);
+  }, [data.bookings]);
 
   const complaintChart = useMemo(() => {
     const priorities = ["HIGH", "MEDIUM", "LOW"];
     return priorities.map((priority) => ({
       label: priority,
-      value: collections.complaints.filter(
-        (complaint) => complaint.priority === priority
-      ).length,
+      value: data.complaints.filter((c) => c.priority === priority).length,
     }));
-  }, [collections.complaints]);
+  }, [data.complaints]);
 
   const paymentChart = useMemo(() => {
     const statuses = ["SUCCESS", "PENDING", "FAILED", "REFUNDED"];
     return statuses.map((status) => ({
       label: status,
-      value: collections.payments.filter(
-        (payment) => payment.payment_status === status
-      ).length,
+      value: data.payments.filter((p) => p.payment_status === status).length,
     }));
-  }, [collections.payments]);
+  }, [data.payments]);
 
   if (loading) {
     return <p className="loading">Loading dashboard...</p>;
@@ -138,91 +131,33 @@ function Dashboard() {
     <div className="page-shell">
       <section className="page-header-card">
         <div>
-          <p className="eyebrow">Analytics</p>
-          <h1 className="page-title">Dashboard</h1>
+          <p className="eyebrow">Student Overview</p>
+          <h1 className="page-title">
+            {data.profile?.full_name || "Dashboard"}
+          </h1>
           <p className="page-description">
-            Track hostel activity, room usage, complaints, and payments in one place.
+            {data.profile?.college_name || "Student details"}
           </p>
         </div>
         <div className="dashboard-pill">
-          <span>Occupancy</span>
-          <strong>{metrics.occupancyRate}%</strong>
+          <span>Room</span>
+          <strong>{data.profile?.room_no || "--"}</strong>
         </div>
       </section>
 
       {error ? <div className="message message-error">{error}</div> : null}
 
       <div className="stats-grid">
-        <Card
-          title="Students"
-          value={metrics.students}
-          subtitle="Registered residents"
-          color="primary"
-        />
-        <Card
-          title="Rooms"
-          value={metrics.rooms}
-          subtitle={`${metrics.totalCapacity} total beds`}
-          color="success"
-        />
-        <Card
-          title="Bookings"
-          value={metrics.bookings}
-          subtitle={`${metrics.approvedBookings} approved`}
-          color="warning"
-        />
-        <Card
-          title="Complaints"
-          value={metrics.complaints}
-          subtitle="Open issue log"
-          color="danger"
-        />
-        <Card
-          title="Payments"
-          value={metrics.payments}
-          subtitle="Collection entries"
-          color="info"
-        />
+        <Card title="My Room" value={data.profile?.room_no || "--"} subtitle={data.profile?.hostel_name || ""} color="primary" />
+        <Card title="Bookings" value={metrics.bookings} subtitle={`${metrics.approvedBookings} approved`} color="success" />
+        <Card title="Complaints" value={metrics.complaints} subtitle="My issues" color="danger" />
+        <Card title="Payments" value={metrics.payments} subtitle="My transactions" color="info" />
       </div>
 
       <section className="dashboard-grid">
-        <ChartCard
-          title="Booking status"
-          subtitle="How current booking requests are distributed."
-          items={bookingChart}
-        />
-        <ChartCard
-          title="Complaint priority"
-          subtitle="See which complaints need attention first."
-          items={complaintChart}
-        />
-        <ChartCard
-          title="Payment status"
-          subtitle="Monitor payment completion at a glance."
-          items={paymentChart}
-          formatter={(value) => `${value} records`}
-        />
-      </section>
-
-      <section className="card spotlight-card">
-        <div className="card-header">
-          <div>
-            <h2 className="card-title">Capacity snapshot</h2>
-            <p className="section-description">
-              Approved bookings are measured against total room capacity.
-            </p>
-          </div>
-        </div>
-        <div className="capacity-track">
-          <div
-            className="capacity-fill"
-            style={{ width: `${Math.min(metrics.occupancyRate, 100)}%` }}
-          />
-        </div>
-        <div className="capacity-legend">
-          <span>{metrics.approvedBookings} approved bookings</span>
-          <span>{metrics.totalCapacity} total beds</span>
-        </div>
+        <ChartCard title="Booking status" subtitle="Your requests" items={bookingChart} />
+        <ChartCard title="Complaint priority" subtitle="Your complaints" items={complaintChart} />
+        <ChartCard title="Payment status" subtitle="Your payments" items={paymentChart} formatter={(v) => `${v}`} />
       </section>
     </div>
   );

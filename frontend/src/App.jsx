@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminOutings from "./pages/admin/AdminOutings";
 import Staff from "./pages/admin/Staff";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import Profile from "./pages/student/Profile";
@@ -24,6 +25,7 @@ const adminNavItems = [
   { path: "/admin/bookings", label: "Bookings" },
   { path: "/admin/complaints", label: "Complaints" },
   { path: "/admin/payments", label: "Payments" },
+  { path: "/admin/outings", label: "Outings" },
   { path: "/admin/staff", label: "Staff" },
 ];
 
@@ -123,6 +125,7 @@ function App() {
           <Route path="/admin/bookings" element={<Bookings />} />
           <Route path="/admin/complaints" element={<Complaints />} />
           <Route path="/admin/payments" element={<Payments />} />
+          <Route path="/admin/outings" element={<AdminOutings />} />
           <Route path="/admin/staff" element={<Staff />} />
           <Route path="/admin/settings" element={<Profile />} />
         </Route>

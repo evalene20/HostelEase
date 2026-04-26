@@ -37,13 +37,11 @@ function Login({ onLogin }) {
         studentId: formState.role === "student" ? Number(formState.studentId) : undefined,
       };
 
-     const response = await login(credentials);
+     const data = await login(credentials);
 
-if (!response.success || !response.data) {
-  throw new Error(response.message || "Login failed");
+if (!data || !data.token) {
+  throw new Error("Login failed");
 }
-
-const data = response.data;
 
 // 🔥 ADD THIS (important)
 localStorage.setItem(

@@ -1,12 +1,10 @@
 import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import { createRecord, getErrorMessage } from "../../services/api";
-import { getAutoPriority, getStudentComplaints, getStudentRecord } from "../../utils/dashboardInsights";
+import useStudentData from "../../hooks/useStudentData";
+import { createRecord, getErrorMessage } from "../../services/authApi";
+import { getAutoPriority } from "../../utils/dashboardInsights";
 
 function StudentComplaints() {
-  const { session } = useOutletContext();
-  const { data, loading, error, refresh } = useHostelData();
+  const { data, loading, error, refresh } = useStudentData();
   const [formState, setFormState] = useState({
     complaint_type: "WATER",
     complaint_date: "",
@@ -15,13 +13,10 @@ function StudentComplaints() {
   const [message, setMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const student = useMemo(
-    () => getStudentRecord(data.students, session.studentId),
-    [data.students, session.studentId]
-  );
+  const student = data.profile;
   const complaints = useMemo(
-    () => getStudentComplaints(data.complaints, student?.student_id),
-    [data.complaints, student]
+    () => data.complaints || [],
+    [data.complaints]
   );
 
   if (loading) {
@@ -29,7 +24,7 @@ function StudentComplaints() {
   }
 
   const predictedPriority = getAutoPriority(
-    data.complaints,
+    data.complaints || [],
     student?.student_id,
     formState.complaint_type
   );

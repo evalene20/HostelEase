@@ -13,9 +13,11 @@ const auth = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log('[DEBUG] auth middleware - decoded token:', decoded);
     req.user = decoded;
     next();
   } catch (error) {
+    console.log('[DEBUG] auth middleware - token verification failed:', error.message);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };

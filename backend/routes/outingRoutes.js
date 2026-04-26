@@ -14,6 +14,7 @@ const sendError = (res, status, message) => {
 // Get outings - auth required (admin sees all, student sees own)
 router.get('/', auth, (req, res) => {
   const { role, userId } = req.user;
+  console.log('[DEBUG] /outings GET - req.user:', { role, userId });
 
   const computedStatus = `
     CASE
@@ -67,8 +68,11 @@ router.get('/', auth, (req, res) => {
     ORDER BY o.created_at DESC
   `;
 
+  console.log('[DEBUG] /outings GET - SQL params:', [userId]);
+
   db.query(sql, [userId], (err, results) => {
     if (err) return sendError(res, 500, err.message);
+    console.log('[DEBUG] /outings GET - result count:', results.length);
     sendSuccess(res, results, 'Outings retrieved');
   });
 });
@@ -84,7 +88,7 @@ router.post('/', auth, isStudent, (req, res) => {
 
   const sql = `
     INSERT INTO Outing (student_id, outing_date, time_out, expected_return, purpose, status)
-    VALUES (?, ?, ?, ?, ?, 'PENDING')
+    VALUES (?, ?, ?, ?, ?, 'REQUESTED')
   `;
 
   db.query(sql, [userId, outing_date, time_out, expected_return, purpose || ''], (err, result) => {
@@ -92,7 +96,7 @@ router.post('/', auth, isStudent, (req, res) => {
 
     sendSuccess(res, {
       outing_id: result.insertId,
-      status: 'PENDING'
+      status: 'REQUESTED'
     }, 'Outing request submitted');
   });
 });

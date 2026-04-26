@@ -1,23 +1,13 @@
 import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import {
-  formatCurrency,
-  getStudentPayments,
-  getStudentRecord,
-} from "../../utils/dashboardInsights";
+import useStudentData from "../../hooks/useStudentData";
+import { formatCurrency } from "../../utils/dashboardInsights";
 
 function StudentPayments() {
-  const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error } = useStudentData();
 
-  const student = useMemo(
-    () => getStudentRecord(data.students, session.studentId),
-    [data.students, session.studentId]
-  );
   const payments = useMemo(
-    () => getStudentPayments(data.payments, student?.student_id),
-    [data.payments, student]
+    () => data.payments || [],
+    [data.payments]
   );
 
   if (loading) {

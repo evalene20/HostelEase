@@ -67,7 +67,7 @@ async function tryRequest(requestFn) {
     try {
       const instance = createAxiosInstance(baseURL);
       const response = await requestFn(instance);
-      return response.data;
+      return response.data?.data || response.data;
     } catch (error) {
       lastError = error;
       // Don't try other base URLs for 401/403 errors

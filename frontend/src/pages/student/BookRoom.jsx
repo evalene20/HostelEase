@@ -1,35 +1,46 @@
-import { useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import { createRecord, getErrorMessage } from "../../services/authApi";
-import { getRecommendedRoom, getStudentRecord } from "../../utils/dashboardInsights";
+import { useEffect, useMemo, useState } from "react";
+import useStudentData from "../../hooks/useStudentData";
+import { createRecord, fetchCollection, getErrorMessage } from "../../services/authApi";
+import { getRecommendedRoom } from "../../utils/dashboardInsights";
 
 function BookRoom() {
-  const { session } = useOutletContext();
-  const { data, loading, error, refresh } = useHostelData();
+  const { data, loading, error, refresh } = useStudentData();
+  const [rooms, setRooms] = useState([]);
+  const [roomsLoading, setRoomsLoading] = useState(true);
   const [roomId, setRoomId] = useState("");
   const [bookingDate, setBookingDate] = useState("");
   const [message, setMessage] = useState("");
   const [submitError, setSubmitError] = useState("");
 
-  const student = useMemo(
-    () => getStudentRecord(data.students, session.studentId),
-    [data.students, session.studentId]
-  );
+  const student = data.profile;
+
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        const roomsData = await fetchCollection("/rooms");
+        setRooms(roomsData || []);
+      } catch {
+        setRooms([]);
+      } finally {
+        setRoomsLoading(false);
+      }
+    };
+    loadRooms();
+  }, []);
 
   const recommendation = useMemo(
     () =>
       getRecommendedRoom({
         student,
-        rooms: data.rooms,
-        bookings: data.bookings,
-        complaints: data.complaints,
-        students: data.students,
+        rooms: rooms || [],
+        bookings: data.bookings || [],
+        complaints: data.complaints || [],
+        students: [],
       }),
-    [data, student]
+    [rooms, data.bookings, data.complaints, student]
   );
 
-  if (loading) {
+  if (loading || roomsLoading) {
     return <p className="loading">Loading room booking options...</p>;
   }
 
@@ -93,7 +104,7 @@ function BookRoom() {
               <label className="form-label" htmlFor="room_id">Room</label>
               <select id="room_id" className="form-select" value={roomId} onChange={(event) => setRoomId(event.target.value)} required>
                 <option value="">Select a room</option>
-                {data.rooms.map((room) => (
+                {rooms.map((room) => (
                   <option key={room.room_id} value={room.room_id}>
                     {room.hostel_name} / {room.room_no} / {room.current_occupancy}-{room.capacity} / {room.occupancy_status}
                   </option>

@@ -51,13 +51,13 @@ router.post('/login', (req, res) => {
     }
 
     const sql = `
-      SELECT s.student_id, s.full_name, s.register_no, c.college_name
+      SELECT s.student_id, s.full_name, s.register_no, s.password, c.college_name
       FROM Student s
       JOIN College c ON s.college_id = c.college_id
-      WHERE s.student_id = ? AND s.password = ?
+      WHERE s.student_id = ?
     `;
 
-    db.query(sql, [studentId, password], (err, results) => {
+    db.query(sql, [studentId], (err, results) => {
       if (err) return sendError(res, 500, err.message);
 
       if (results.length === 0) {
@@ -65,6 +65,11 @@ router.post('/login', (req, res) => {
       }
 
       const student = results[0];
+
+      if (password !== student.password) {
+        return sendError(res, 401, 'Invalid password');
+      }
+
       const token = jwt.sign(
         {
           role: 'STUDENT',
@@ -85,6 +90,7 @@ router.post('/login', (req, res) => {
         collegeName: student.college_name
       }, 'Login successful');
     });
+
     return;
   }
 
@@ -99,6 +105,7 @@ router.get('/verify', auth, (req, res) => {
 // Get profile - auth required
 router.get('/profile', auth, (req, res) => {
   const { userId, role } = req.user;
+  console.log('[DEBUG] /auth/profile - req.user:', req.user);
 
   if (role === 'ADMIN') {
     return sendSuccess(res, {
@@ -134,6 +141,7 @@ router.get('/profile', auth, (req, res) => {
 
   db.query(sql, [userId], (err, results) => {
     if (err) return sendError(res, 500, err.message);
+    console.log('[DEBUG] /auth/profile - query results:', results);
 
     if (results.length === 0) {
       const basicSql = `
@@ -158,7 +166,9 @@ router.get('/profile', auth, (req, res) => {
       return;
     }
 
-    sendSuccess(res, { role: 'STUDENT', ...results[0] }, 'Profile loaded');
+    const profileData = { role: 'STUDENT', ...results[0] };
+    console.log('[DEBUG] /auth/profile - sending profile:', profileData);
+    sendSuccess(res, profileData, 'Profile loaded');
   });
 });
 

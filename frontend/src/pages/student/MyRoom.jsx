@@ -1,29 +1,23 @@
-import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import {
-  getRecommendedRoom,
-  getStudentBookings,
-  getStudentRecord,
-} from "../../utils/dashboardInsights";
+import useStudentData from "../../hooks/useStudentData";
+import { getRecommendedRoom } from "../../utils/dashboardInsights";
 
 function MyRoom() {
-  const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error } = useStudentData();
 
   if (loading) {
     return <div className="loading" style={{ padding: '100px', textAlign: 'center' }}>Retrieving room details...</div>;
   }
 
-  const student = getStudentRecord(data.students, session.studentId);
-  const bookings = getStudentBookings(data.bookings, student?.student_id);
+  const student = data.profile;
+  const bookings = data.bookings || [];
   const currentBooking = bookings.find((item) => item.status === "APPROVED") || bookings[0];
-  const currentRoom = data.rooms.find((room) => Number(room.room_id) === Number(currentBooking?.room_id));
+  const currentRoom = currentBooking;
   const recommendation = getRecommendedRoom({
     student,
-    rooms: data.rooms,
-    bookings: data.bookings,
-    complaints: data.complaints,
-    students: data.students,
+    rooms: [],
+    bookings,
+    complaints: data.complaints || [],
+    students: [],
   });
 
   return (

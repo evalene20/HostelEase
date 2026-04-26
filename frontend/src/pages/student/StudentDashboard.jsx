@@ -1,33 +1,27 @@
 import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
 import Card from "../../components/Card";
-import useHostelData from "../../hooks/useHostelData";
+import useStudentData from "../../hooks/useStudentData";
 import {
   formatCurrency,
   getCurrentBooking,
   getRecommendedRoom,
   getStudentAlerts,
-  getStudentBookings,
-  getStudentComplaints,
-  getStudentPayments,
-  getStudentRecord,
 } from "../../utils/dashboardInsights";
 
 function StudentDashboard() {
-  const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error } = useStudentData();
 
   const model = useMemo(() => {
-    const student = getStudentRecord(data.students, session.studentId);
-    const bookings = getStudentBookings(data.bookings, student?.student_id);
-    const complaints = getStudentComplaints(data.complaints, student?.student_id);
-    const payments = getStudentPayments(data.payments, student?.student_id);
+    const student = data.profile;
+    const bookings = data.bookings || [];
+    const complaints = data.complaints || [];
+    const payments = data.payments || [];
     const recommendation = getRecommendedRoom({
       student,
-      rooms: data.rooms,
-      bookings: data.bookings,
-      complaints: data.complaints,
-      students: data.students,
+      rooms: [],
+      bookings,
+      complaints,
+      students: [],
     });
     const alerts = getStudentAlerts({
       student,
@@ -46,7 +40,7 @@ function StudentDashboard() {
       alerts,
       currentBooking: getCurrentBooking(bookings),
     };
-  }, [data, session.studentId]);
+  }, [data]);
 
   if (loading) {
     return <p className="loading">Loading student dashboard...</p>;
@@ -93,7 +87,7 @@ function StudentDashboard() {
             <h2 className="card-title">Profile & identity</h2>
           </div>
           <div className="detail-grid">
-            <div><span>Name</span><strong>{model.student?.full_name || session.username}</strong></div>
+            <div><span>Name</span><strong>{model.student?.full_name || "Student"}</strong></div>
             <div><span>Register No</span><strong>{model.student?.register_no || "Not available"}</strong></div>
             <div><span>College</span><strong>{model.student?.college_name || "Not available"}</strong></div>
             <div><span>Emergency Contact</span><strong>Parent / +91 98765 43210</strong></div>

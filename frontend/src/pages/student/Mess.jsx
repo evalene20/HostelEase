@@ -1,25 +1,38 @@
 import { useMemo } from "react";
-import { useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
-import { getStudentRecord } from "../../utils/dashboardInsights";
+import useStudentData from "../../hooks/useStudentData";
+import { fetchCollection } from "../../services/authApi";
+import { useState, useEffect } from "react";
 
 function Mess() {
-  const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData(["students", "mess"]);
+  const { data, loading, error } = useStudentData();
+  const [messData, setMessData] = useState([]);
+  const [messLoading, setMessLoading] = useState(true);
 
-  const student = useMemo(
-    () => getStudentRecord(data.students, session.studentId),
-    [data.students, session.studentId]
-  );
+  useEffect(() => {
+    const loadMess = async () => {
+      try {
+        const mess = await fetchCollection("/mess");
+        setMessData(mess || []);
+      } catch {
+        setMessData([]);
+      } finally {
+        setMessLoading(false);
+      }
+    };
+    loadMess();
+  }, []);
+
+  const student = data.profile;
   const menuRows = useMemo(() => {
     if (!student?.hostel_name) {
-      return data.mess;
+      return messData;
     }
+    return messData.filter((item) => item.hostel_name === student.hostel_name);
+  }, [messData, student]);
 
-    return data.mess.filter((item) => item.hostel_name === student.hostel_name);
-  }, [data.mess, student]);
+  const isLoading = loading || messLoading;
 
-  if (loading) {
+  if (isLoading) {
     return <p className="loading">Loading mess details...</p>;
   }
 

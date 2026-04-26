@@ -1,13 +1,9 @@
-import { Link, useOutletContext } from "react-router-dom";
-import useHostelData from "../../hooks/useHostelData";
+import { Link } from "react-router-dom";
+import useStudentData from "../../hooks/useStudentData";
 import {
   getCurrentBooking,
   getRecommendedRoom,
   getStudentAlerts,
-  getStudentBookings,
-  getStudentComplaints,
-  getStudentPayments,
-  getStudentRecord,
 } from "../../utils/dashboardInsights";
 
 const sectionLinks = [
@@ -21,24 +17,23 @@ const sectionLinks = [
 ];
 
 function StudentHome() {
-  const { session } = useOutletContext();
-  const { data, loading, error } = useHostelData();
+  const { data, loading, error } = useStudentData();
 
   if (loading) {
     return <p className="loading">Loading student home...</p>;
   }
 
-  const student = getStudentRecord(data.students, session.studentId);
-  const bookings = getStudentBookings(data.bookings, student?.student_id);
-  const complaints = getStudentComplaints(data.complaints, student?.student_id);
-  const payments = getStudentPayments(data.payments, student?.student_id);
+  const student = data.profile;
+  const bookings = data.bookings || [];
+  const complaints = data.complaints || [];
+  const payments = data.payments || [];
   const currentBooking = getCurrentBooking(bookings);
   const recommendedRoom = getRecommendedRoom({
     student,
-    rooms: data.rooms,
-    bookings: data.bookings,
-    complaints: data.complaints,
-    students: data.students,
+    rooms: [],
+    bookings,
+    complaints,
+    students: [],
   });
   const alerts = getStudentAlerts({
     student,
@@ -55,7 +50,7 @@ function StudentHome() {
           <p className="eyebrow">Student Home</p>
           <h1 className="hero-title">Everything a resident needs in one place.</h1>
           <p className="hero-description">
-            Welcome {student?.full_name || session.username}. Check room updates,
+            Welcome {student?.full_name || "Student"}. Check room updates,
             complaint status, payments, mess details, and outing approvals from here.
           </p>
           <div className="hero-actions">

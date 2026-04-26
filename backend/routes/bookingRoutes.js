@@ -12,32 +12,68 @@ const sendError = (res, status, message) => {
   return res.status(status).json({ success: false, message, data: null });
 };
 
-// Get all bookings - auth required
+// Get all bookings - auth required (STUDENT sees own, ADMIN sees all)
 router.get('/', auth, (req, res) => {
-  const sql = `
-    SELECT
-      b.booking_id,
-      b.student_id,
-      b.room_id,
-      b.booking_date,
-      s.full_name,
-      s.register_no,
-      r.room_no,
-      r.capacity,
-      h.hostel_name,
-      COUNT(CASE WHEN b2.status = 'APPROVED' THEN 1 END) AS current_occupancy,
-      b.status
-    FROM Booking b
-    JOIN Student s ON b.student_id = s.student_id
-    JOIN Room r ON b.room_id = r.room_id
-    JOIN Hostel h ON r.hostel_id = h.hostel_id
-    LEFT JOIN Booking b2 ON b2.room_id = r.room_id
-    GROUP BY b.booking_id
-    ORDER BY b.booking_date DESC, b.booking_id DESC
-  `;
+  const { role, userId } = req.user;
+  console.log('[DEBUG] /bookings GET - req.user:', { role, userId });
 
-  db.query(sql, (err, result) => {
+  let sql;
+  let params = [];
+
+  if (role === 'STUDENT') {
+    sql = `
+      SELECT
+        b.booking_id,
+        b.student_id,
+        b.room_id,
+        b.booking_date,
+        s.full_name,
+        s.register_no,
+        r.room_no,
+        r.capacity,
+        h.hostel_name,
+        COUNT(CASE WHEN b2.status = 'APPROVED' THEN 1 END) AS current_occupancy,
+        b.status
+      FROM Booking b
+      JOIN Student s ON b.student_id = s.student_id
+      JOIN Room r ON b.room_id = r.room_id
+      JOIN Hostel h ON r.hostel_id = h.hostel_id
+      LEFT JOIN Booking b2 ON b2.room_id = r.room_id
+      WHERE b.student_id = ?
+      GROUP BY b.booking_id
+      ORDER BY b.booking_date DESC, b.booking_id DESC
+    `;
+    params = [userId];
+  } else {
+    sql = `
+      SELECT
+        b.booking_id,
+        b.student_id,
+        b.room_id,
+        b.booking_date,
+        s.full_name,
+        s.register_no,
+        r.room_no,
+        r.capacity,
+        h.hostel_name,
+        COUNT(CASE WHEN b2.status = 'APPROVED' THEN 1 END) AS current_occupancy,
+        b.status
+      FROM Booking b
+      JOIN Student s ON b.student_id = s.student_id
+      JOIN Room r ON b.room_id = r.room_id
+      JOIN Hostel h ON r.hostel_id = h.hostel_id
+      LEFT JOIN Booking b2 ON b2.room_id = r.room_id
+      GROUP BY b.booking_id
+      ORDER BY b.booking_date DESC, b.booking_id DESC
+    `;
+  }
+
+  console.log('[DEBUG] /bookings GET - SQL:', sql.replace(/\s+/g, ' ').trim());
+  console.log('[DEBUG] /bookings GET - params:', params);
+
+  db.query(sql, params, (err, result) => {
     if (err) return sendError(res, 500, err.message);
+    console.log('[DEBUG] /bookings GET - result count:', result.length);
 
     const enriched = result.map((booking) => {
       const suggestion = suggestBookingDecision(booking);
@@ -48,6 +84,7 @@ router.get('/', auth, (req, res) => {
       };
     });
 
+    console.log('[DEBUG] /bookings GET - returning', enriched.length, 'bookings');
     sendSuccess(res, enriched, 'Bookings retrieved');
   });
 });

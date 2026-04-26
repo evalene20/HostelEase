@@ -12,25 +12,53 @@ const sendError = (res, status, message) => {
   return res.status(status).json({ success: false, message, data: null });
 };
 
-// Get all payments - auth required
+// Get all payments - auth required (STUDENT sees own, ADMIN sees all)
 router.get('/', auth, (req, res) => {
-  const sql = `
-    SELECT
-      p.payment_id,
-      p.booking_id,
-      b.student_id,
-      s.full_name,
-      p.amount,
-      p.payment_status,
-      p.payment_date
-    FROM Payment p
-    JOIN Booking b ON p.booking_id = b.booking_id
-    JOIN Student s ON b.student_id = s.student_id
-    ORDER BY p.payment_date DESC, p.payment_id DESC
-  `;
+  const { role, userId } = req.user;
+  console.log('[DEBUG] /payments GET - req.user:', { role, userId });
 
-  db.query(sql, (err, result) => {
+  let sql;
+  let params = [];
+
+  if (role === 'STUDENT') {
+    sql = `
+      SELECT
+        p.payment_id,
+        p.booking_id,
+        b.student_id,
+        s.full_name,
+        p.amount,
+        p.payment_status,
+        p.payment_date
+      FROM Payment p
+      JOIN Booking b ON p.booking_id = b.booking_id
+      JOIN Student s ON b.student_id = s.student_id
+      WHERE b.student_id = ?
+      ORDER BY p.payment_date DESC, p.payment_id DESC
+    `;
+    params = [userId];
+  } else {
+    sql = `
+      SELECT
+        p.payment_id,
+        p.booking_id,
+        b.student_id,
+        s.full_name,
+        p.amount,
+        p.payment_status,
+        p.payment_date
+      FROM Payment p
+      JOIN Booking b ON p.booking_id = b.booking_id
+      JOIN Student s ON b.student_id = s.student_id
+      ORDER BY p.payment_date DESC, p.payment_id DESC
+    `;
+  }
+
+  console.log('[DEBUG] /payments GET - SQL params:', params);
+
+  db.query(sql, params, (err, result) => {
     if (err) return sendError(res, 500, err.message);
+    console.log('[DEBUG] /payments GET - result count:', result.length);
 
     const enriched = result.map((payment) => {
       const risk = detectPaymentRisk(

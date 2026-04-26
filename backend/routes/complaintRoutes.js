@@ -16,34 +16,71 @@ const sendError = (res, status, message) => {
   return res.status(status).json({ success: false, message, data: null });
 };
 
-// Get all complaints - auth required
+// Get all complaints - auth required (STUDENT sees own, ADMIN sees all)
 router.get('/', auth, (req, res) => {
-  const sql = `
-    SELECT
-      c.complaint_id,
-      c.student_id,
-      s.full_name,
-      c.complaint_type,
-      c.priority,
-      c.complaint_date,
-      st.staff_name AS assigned_staff,
-      st.role AS assigned_role,
-      ca.assigned_on,
-      ca.remarks,
-      CASE
-        WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
-        ELSE 'PENDING_REVIEW'
-      END AS complaint_status,
-      DATEDIFF(CURDATE(), c.complaint_date) AS resolution_time_days
-    FROM Complaint c
-    JOIN Student s ON c.student_id = s.student_id
-    LEFT JOIN Complaint_Assignment ca ON ca.complaint_id = c.complaint_id
-    LEFT JOIN Staff st ON ca.staff_id = st.staff_id
-    ORDER BY c.complaint_date DESC, c.complaint_id DESC
-  `;
+  const { role, userId } = req.user;
+  console.log('[DEBUG] /complaints GET - req.user:', { role, userId });
 
-  db.query(sql, (err, result) => {
+  let sql;
+  let params = [];
+
+  if (role === 'STUDENT') {
+    sql = `
+      SELECT
+        c.complaint_id,
+        c.student_id,
+        s.full_name,
+        c.complaint_type,
+        c.priority,
+        c.complaint_date,
+        st.staff_name AS assigned_staff,
+        st.role AS assigned_role,
+        ca.assigned_on,
+        ca.remarks,
+        CASE
+          WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
+          ELSE 'PENDING_REVIEW'
+        END AS complaint_status,
+        DATEDIFF(CURDATE(), c.complaint_date) AS resolution_time_days
+      FROM Complaint c
+      JOIN Student s ON c.student_id = s.student_id
+      LEFT JOIN Complaint_Assignment ca ON ca.complaint_id = c.complaint_id
+      LEFT JOIN Staff st ON ca.staff_id = st.staff_id
+      WHERE c.student_id = ?
+      ORDER BY c.complaint_date DESC, c.complaint_id DESC
+    `;
+    params = [userId];
+  } else {
+    sql = `
+      SELECT
+        c.complaint_id,
+        c.student_id,
+        s.full_name,
+        c.complaint_type,
+        c.priority,
+        c.complaint_date,
+        st.staff_name AS assigned_staff,
+        st.role AS assigned_role,
+        ca.assigned_on,
+        ca.remarks,
+        CASE
+          WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
+          ELSE 'PENDING_REVIEW'
+        END AS complaint_status,
+        DATEDIFF(CURDATE(), c.complaint_date) AS resolution_time_days
+      FROM Complaint c
+      JOIN Student s ON c.student_id = s.student_id
+      LEFT JOIN Complaint_Assignment ca ON ca.complaint_id = c.complaint_id
+      LEFT JOIN Staff st ON ca.staff_id = st.staff_id
+      ORDER BY c.complaint_date DESC, c.complaint_id DESC
+    `;
+  }
+
+  console.log('[DEBUG] /complaints GET - SQL params:', params);
+
+  db.query(sql, params, (err, result) => {
     if (err) return sendError(res, 500, err.message);
+    console.log('[DEBUG] /complaints GET - result count:', result.length);
     const enriched = result.map((complaint) => ({
       ...complaint,
       ai_feedback: predictComplaintFeedback(result, complaint),

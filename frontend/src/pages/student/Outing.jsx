@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
 import { fetchOutings, createOuting, recordOutingReturn, getErrorMessage } from "../../services/authApi";
 
 function Outing() {
-  const { session } = useOutletContext();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,7 +35,7 @@ function Outing() {
   );
 
   const pendingApprovals = useMemo(
-    () => requests.filter((request) => request.status === "PENDING").length,
+    () => requests.filter((request) => request.status === "REQUESTED" || request.status === "PENDING").length,
     [requests]
   );
 
@@ -142,7 +140,28 @@ function Outing() {
               <div>
                 <strong>{request.outing_date}</strong> | Out: {request.time_out} | Return by: {request.expected_return}
                 {request.purpose && <span style={{ color: "#666", marginLeft: "8px" }}>({request.purpose})</span>}
-                <span className={`badge badge-${request.status?.toLowerCase()}`} style={{ marginLeft: "8px" }}>
+                <span
+                  className="badge"
+                  style={{
+                    marginLeft: "8px",
+                    background:
+                      request.status === "APPROVED"
+                        ? "#dcfce7"
+                        : request.status === "REJECTED"
+                        ? "#fee2e2"
+                        : request.computed_status === "LATE"
+                        ? "#ffedd5"
+                        : "#e0e7ff",
+                    color:
+                      request.status === "APPROVED"
+                        ? "#16a34a"
+                        : request.status === "REJECTED"
+                        ? "#dc2626"
+                        : request.computed_status === "LATE"
+                        ? "#ea580c"
+                        : "#4f46e5",
+                  }}
+                >
                   {request.computed_status || request.status}
                 </span>
               </div>
