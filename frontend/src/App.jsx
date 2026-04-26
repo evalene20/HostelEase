@@ -106,7 +106,16 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to={getDefaultPath(session)} replace />} />
+        <Route
+          path="/"
+          element={
+            session.isAuthenticated ? (
+              <Navigate to={getDefaultPath(session)} replace />
+            ) : (
+              <Login onLogin={handleLogin} />
+            )
+          }
+        />
         <Route
           path="/login"
           element={
