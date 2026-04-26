@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth } = require('../middleware/authMiddleware');
 const { summarizeStudentRisk } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all students - auth required
+router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
       s.student_id,
@@ -27,30 +37,25 @@ router.get('/', (req, res) => {
     )
     LEFT JOIN Room r ON b.room_id = r.room_id
     LEFT JOIN Hostel h ON r.hostel_id = h.hostel_id
-    ORDER BY s.student_id;
+    ORDER BY s.student_id
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     db.query('SELECT student_id, complaint_type FROM Complaint', (complaintErr, complaints) => {
-      if (complaintErr) return res.status(500).json({ error: complaintErr.message });
+      if (complaintErr) return sendError(res, 500, complaintErr.message);
 
       db.query(
-        `
-          SELECT b.student_id, p.payment_status
-          FROM Payment p
-          JOIN Booking b ON p.booking_id = b.booking_id
-        `,
+        `SELECT b.student_id, p.payment_status FROM Payment p JOIN Booking b ON p.booking_id = b.booking_id`,
         (paymentErr, payments) => {
-          if (paymentErr) return res.status(500).json({ error: paymentErr.message });
+          if (paymentErr) return sendError(res, 500, paymentErr.message);
 
           const enriched = result.map((student) => {
             const risk = summarizeStudentRisk(
-              complaints.filter((complaint) => Number(complaint.student_id) === Number(student.student_id)),
-              payments.filter((payment) => Number(payment.student_id) === Number(student.student_id))
+              complaints.filter((c) => Number(c.student_id) === Number(student.student_id)),
+              payments.filter((p) => Number(p.student_id) === Number(student.student_id))
             );
-
             return {
               ...student,
               ai_student_risk: risk.level,
@@ -58,28 +63,26 @@ router.get('/', (req, res) => {
             };
           });
 
-          res.json(enriched);
+          sendSuccess(res, enriched, 'Students retrieved');
         }
       );
     });
   });
 });
 
-router.post('/', (req, res) => {
+// Create student - auth required
+router.post('/', auth, (req, res) => {
   const { register_no, full_name, college_id } = req.body || {};
 
   if (!register_no || !full_name || !college_id) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'Missing required fields: register_no, full_name, college_id');
   }
 
-  const sql = `
-    INSERT INTO Student (register_no, full_name, college_id)
-    VALUES (?, ?, ?)
-  `;
+  const sql = `INSERT INTO Student (register_no, full_name, college_id) VALUES (?, ?, ?)`;
 
   db.query(sql, [register_no, full_name, college_id], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Student created successfully', student_id: result.insertId });
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { student_id: result.insertId }, 'Student created successfully');
   });
 });
 

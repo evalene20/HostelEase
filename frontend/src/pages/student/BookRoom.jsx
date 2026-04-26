@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import useHostelData from "../../hooks/useHostelData";
-import { createRecord, getErrorMessage } from "../../services/api";
+import { createRecord, getErrorMessage } from "../../services/authApi";
 import { getRecommendedRoom, getStudentRecord } from "../../utils/dashboardInsights";
 
 function BookRoom() {

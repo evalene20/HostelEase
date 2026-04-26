@@ -4,8 +4,15 @@ const db = require('../config/db');
 const { suggestBookingDecision } = require('../services/aiRules');
 const { auth, isAdmin } = require('../middleware/authMiddleware');
 
-// get bookings with ai rule based
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
 
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all bookings - auth required
 router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
@@ -30,11 +37,10 @@ router.get('/', auth, (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     const enriched = result.map((booking) => {
       const suggestion = suggestBookingDecision(booking);
-
       return {
         ...booking,
         ai_booking_decision: suggestion.decision,
@@ -42,69 +48,59 @@ router.get('/', auth, (req, res) => {
       };
     });
 
-    res.json(enriched);
+    sendSuccess(res, enriched, 'Bookings retrieved');
   });
 });
 
-// create booking
-
+// Create booking - auth required + duplicate check
 router.post('/', auth, (req, res) => {
   const { student_id, room_id, booking_date } = req.body || {};
 
   if (!student_id || !room_id || !booking_date) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'Missing required fields: student_id, room_id, booking_date');
   }
 
-  // no duplicate active bookings
- const checkSql = `
-  SELECT * FROM Booking
-  WHERE student_id = ?
-  AND status IN ('REQUESTED','APPROVED')
-`;
+  const checkSql = `
+    SELECT * FROM Booking
+    WHERE student_id = ?
+    AND status IN ('REQUESTED','APPROVED')
+  `;
 
-db.query(checkSql, [student_id], (err, existing) => {
-  if (err) return res.status(500).json({ error: err.message });
+  db.query(checkSql, [student_id], (err, existing) => {
+    if (err) return sendError(res, 500, err.message);
 
-  if (existing.length > 0) {
-    return res.status(400).json({
-      error: 'Active booking already exists for this student'
-    });
-  }
+    if (existing.length > 0) {
+      return sendError(res, 400, 'Active booking already exists for this student');
+    }
 
-  // proceed
-});
-
-    // Call stored procedure
     const sql = `CALL SafeInsertBooking(?, ?, ?)`;
 
     db.query(sql, [student_id, room_id, booking_date], (err) => {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) return sendError(res, 500, err.message);
 
-      res.json({
-        message: 'Booking request created',
+      sendSuccess(res, {
         ai_booking_reason: 'Pending admin approval based on room capacity'
-      });
+      }, 'Booking request created');
     });
   });
+});
 
-
+// Update booking status - auth + isAdmin required
 router.put('/:id/status', auth, isAdmin, (req, res) => {
   const bookingId = req.params.id;
   const { status } = req.body;
 
   if (!['APPROVED', 'REJECTED'].includes(status)) {
-    return res.status(400).json({ error: 'Invalid status' });
+    return sendError(res, 400, 'Invalid status. Use APPROVED or REJECTED');
   }
 
   const sql = `UPDATE Booking SET status = ? WHERE booking_id = ?`;
 
   db.query(sql, [status, bookingId], (err) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
-    res.json({ message: `Booking ${status}` });
+    sendSuccess(res, { booking_id: bookingId, status }, `Booking ${status.toLowerCase()}`);
   });
 });
-
-
 
 module.exports = router;

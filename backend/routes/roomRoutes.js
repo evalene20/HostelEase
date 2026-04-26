@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth } = require('../middleware/authMiddleware');
 const { getRoomStatusNote } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all rooms - auth required
+router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
       r.room_id,
@@ -25,32 +35,30 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     const enriched = result.map((room) => ({
       ...room,
       ai_room_alert: getRoomStatusNote(room),
     }));
 
-    res.json(enriched);
+    sendSuccess(res, enriched, 'Rooms retrieved');
   });
 });
 
-router.post('/', (req, res) => {
+// Create room - auth required
+router.post('/', auth, (req, res) => {
   const { hostel_id, room_no, capacity } = req.body || {};
 
   if (!hostel_id || !room_no || !capacity) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'Missing required fields: hostel_id, room_no, capacity');
   }
 
-  const sql = `
-    INSERT INTO Room (hostel_id, room_no, capacity)
-    VALUES (?, ?, ?)
-  `;
+  const sql = `INSERT INTO Room (hostel_id, room_no, capacity) VALUES (?, ?, ?)`;
 
   db.query(sql, [hostel_id, room_no, capacity], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Room created successfully', room_id: result.insertId });
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { room_id: result.insertId }, 'Room created successfully');
   });
 });
 

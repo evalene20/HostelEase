@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Card from "../components/Card";
-import { fetchCollection, getErrorMessage } from "../services/api";
+import { fetchCollection, getErrorMessage } from "../services/authApi";
 
 function ChartCard({ title, subtitle, items, formatter = (value) => value }) {
   const maxValue = Math.max(...items.map((item) => item.value), 1);

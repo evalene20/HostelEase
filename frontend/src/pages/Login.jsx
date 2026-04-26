@@ -37,16 +37,34 @@ function Login({ onLogin }) {
         studentId: formState.role === "student" ? Number(formState.studentId) : undefined,
       };
 
-      const response = await login(credentials);
+     const response = await login(credentials);
 
-      onLogin({
-        token: response.token,
-        role: response.role.toLowerCase(),
-        username: response.username,
-        studentId: response.studentId,
-        registerNo: response.registerNo,
-        collegeName: response.collegeName,
-      });
+if (!response.success || !response.data) {
+  throw new Error(response.message || "Login failed");
+}
+
+const data = response.data;
+
+// 🔥 ADD THIS (important)
+localStorage.setItem(
+  "shm-session",
+  JSON.stringify({
+    token: data.token,
+    role: data.role,
+    username: data.username,
+    studentId: data.studentId,
+  })
+);
+
+onLogin({
+  token: data.token,
+  role: (data.role || "").toLowerCase(),
+  username: data.username,
+  studentId: data.studentId,
+  registerNo: data.registerNo,
+  collegeName: data.collegeName,
+});
+
     } catch (err) {
       setError(getErrorMessage(err, "Login failed. Please try again."));
     } finally {

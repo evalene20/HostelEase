@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth } = require('../middleware/authMiddleware');
 const { detectPaymentRisk } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all payments - auth required
+router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
       p.payment_id,
@@ -20,12 +30,12 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
+
     const enriched = result.map((payment) => {
       const risk = detectPaymentRisk(
-        result.filter((candidate) => Number(candidate.student_id) === Number(payment.student_id))
+        result.filter((c) => Number(c.student_id) === Number(payment.student_id))
       );
-
       return {
         ...payment,
         student_payment_risk: risk.riskLevel,
@@ -33,29 +43,27 @@ router.get('/', (req, res) => {
       };
     });
 
-    res.json(enriched);
+    sendSuccess(res, enriched, 'Payments retrieved');
   });
 });
 
-router.post('/', (req, res) => {
+// Create payment - auth required
+router.post('/', auth, (req, res) => {
   const { booking_id, amount, payment_date, payment_status } = req.body || {};
 
   if (!booking_id || !amount || !payment_date || !payment_status) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'Missing required fields: booking_id, amount, payment_date, payment_status');
   }
 
-  const sql = `
-    INSERT INTO Payment (booking_id, amount, payment_date, payment_status)
-    VALUES (?, ?, ?, ?)
-  `;
+  const sql = `INSERT INTO Payment (booking_id, amount, payment_date, payment_status) VALUES (?, ?, ?, ?)`;
 
   db.query(sql, [booking_id, amount, payment_date, payment_status], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({
-      message: 'Payment created successfully',
+    if (err) return sendError(res, 500, err.message);
+
+    sendSuccess(res, {
       payment_id: result.insertId,
-      ai_payment_note: payment_status === 'FAILED' ? 'Payment risk warning triggered' : 'Payment recorded successfully',
-    });
+      ai_payment_note: payment_status === 'FAILED' ? 'Payment risk warning triggered' : 'Payment recorded successfully'
+    }, 'Payment created successfully');
   });
 });
 

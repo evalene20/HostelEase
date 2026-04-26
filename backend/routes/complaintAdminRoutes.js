@@ -3,7 +3,15 @@ const router = express.Router();
 const db = require('../config/db');
 const { auth, isAdmin } = require('../middleware/authMiddleware');
 
-// Get all complaints with full details (admin view)
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all complaints with full details - auth + isAdmin required
 router.get('/', auth, isAdmin, (req, res) => {
   const sql = `
     SELECT
@@ -39,12 +47,12 @@ router.get('/', auth, isAdmin, (req, res) => {
   `;
 
   db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, results, 'Complaints retrieved');
   });
 });
 
-// Get available staff for assignment
+// Get available staff - auth + isAdmin required
 router.get('/staff', auth, isAdmin, (req, res) => {
   const { role } = req.query;
 
@@ -59,90 +67,81 @@ router.get('/staff', auth, isAdmin, (req, res) => {
   sql += ' ORDER BY staff_name';
 
   db.query(sql, params, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, results, 'Staff retrieved');
   });
 });
 
-// Assign staff to complaint
+// Assign staff to complaint - auth + isAdmin required
 router.post('/:id/assign', auth, isAdmin, (req, res) => {
   const complaintId = req.params.id;
   const { staff_id, remarks } = req.body || {};
 
   if (!staff_id) {
-    return res.status(400).json({ error: 'Staff ID required' });
+    return sendError(res, 400, 'Staff ID required');
   }
 
-  // Check if complaint exists
   db.query('SELECT complaint_id FROM Complaint WHERE complaint_id = ?', [complaintId], (checkErr, checkResults) => {
-    if (checkErr) return res.status(500).json({ error: checkErr.message });
+    if (checkErr) return sendError(res, 500, checkErr.message);
     if (checkResults.length === 0) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      return sendError(res, 404, 'Complaint not found');
     }
 
-    // Check if staff exists
     db.query('SELECT staff_id, staff_name, role FROM Staff WHERE staff_id = ?', [staff_id], (staffErr, staffResults) => {
-      if (staffErr) return res.status(500).json({ error: staffErr.message });
+      if (staffErr) return sendError(res, 500, staffErr.message);
       if (staffResults.length === 0) {
-        return res.status(404).json({ error: 'Staff not found' });
+        return sendError(res, 404, 'Staff not found');
       }
 
       const staff = staffResults[0];
 
-      // Remove existing assignment if any
       db.query('DELETE FROM Complaint_Assignment WHERE complaint_id = ?', [complaintId], (delErr) => {
-        if (delErr) return res.status(500).json({ error: delErr.message });
+        if (delErr) return sendError(res, 500, delErr.message);
 
-        // Create new assignment
         const sql = `
           INSERT INTO Complaint_Assignment (complaint_id, staff_id, assigned_on, remarks)
           VALUES (?, ?, CURDATE(), ?)
         `;
 
         db.query(sql, [complaintId, staff_id, remarks || `Assigned to ${staff.staff_name}`], (insertErr) => {
-          if (insertErr) return res.status(500).json({ error: insertErr.message });
+          if (insertErr) return sendError(res, 500, insertErr.message);
 
-          res.json({
-            message: 'Staff assigned successfully',
+          sendSuccess(res, {
             complaint_id: complaintId,
             staff_id,
             staff_name: staff.staff_name,
             role: staff.role,
             remarks: remarks || `Assigned to ${staff.staff_name}`
-          });
+          }, 'Staff assigned successfully');
         });
       });
     });
   });
 });
 
-// Update complaint priority
+// Update complaint priority - auth + isAdmin required
 router.put('/:id/priority', auth, isAdmin, (req, res) => {
   const complaintId = req.params.id;
   const { priority } = req.body;
 
   if (!['LOW', 'MEDIUM', 'HIGH'].includes(priority)) {
-    return res.status(400).json({ error: 'Invalid priority. Use LOW, MEDIUM, or HIGH' });
+    return sendError(res, 400, 'Invalid priority. Use LOW, MEDIUM, or HIGH');
   }
 
   const sql = 'UPDATE Complaint SET priority = ? WHERE complaint_id = ?';
 
   db.query(sql, [priority, complaintId], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Complaint not found' });
+      return sendError(res, 404, 'Complaint not found');
     }
 
-    res.json({
-      message: 'Priority updated',
-      complaint_id: complaintId,
-      priority
-    });
+    sendSuccess(res, { complaint_id: complaintId, priority }, 'Priority updated');
   });
 });
 
-// Update assignment remarks
+// Update assignment remarks - auth + isAdmin required
 router.put('/:id/remarks', auth, isAdmin, (req, res) => {
   const complaintId = req.params.id;
   const { remarks } = req.body || {};
@@ -150,35 +149,28 @@ router.put('/:id/remarks', auth, isAdmin, (req, res) => {
   const sql = 'UPDATE Complaint_Assignment SET remarks = ? WHERE complaint_id = ?';
 
   db.query(sql, [remarks, complaintId], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Assignment not found' });
+      return sendError(res, 404, 'Assignment not found');
     }
 
-    res.json({
-      message: 'Remarks updated',
-      complaint_id: complaintId,
-      remarks
-    });
+    sendSuccess(res, { complaint_id: complaintId, remarks }, 'Remarks updated');
   });
 });
 
-// Unassign staff from complaint
+// Unassign staff from complaint - auth + isAdmin required
 router.delete('/:id/assign', auth, isAdmin, (req, res) => {
   const complaintId = req.params.id;
 
   db.query('DELETE FROM Complaint_Assignment WHERE complaint_id = ?', [complaintId], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'No assignment found for this complaint' });
+      return sendError(res, 404, 'No assignment found for this complaint');
     }
 
-    res.json({
-      message: 'Staff unassigned',
-      complaint_id: complaintId
-    });
+    sendSuccess(res, { complaint_id: complaintId }, 'Staff unassigned');
   });
 });
 

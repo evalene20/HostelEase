@@ -1,13 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth, isStudent } = require('../middleware/authMiddleware');
 const {
   assignStaff,
   predictComplaintFeedback,
   predictComplaintPriority,
 } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all complaints - auth required
+router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
       c.complaint_id,
@@ -33,30 +43,32 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
     const enriched = result.map((complaint) => ({
       ...complaint,
       ai_feedback: predictComplaintFeedback(result, complaint),
     }));
-    res.json(enriched);
+    sendSuccess(res, enriched, 'Complaints retrieved');
   });
 });
 
-router.post('/', (req, res) => {
-  const { student_id, complaint_type, complaint_date } = req.body || {};
+// Create complaint - auth + isStudent required
+router.post('/', auth, isStudent, (req, res) => {
+  const { complaint_type, complaint_date } = req.body || {};
+  const { userId } = req.user;
 
-  if (!student_id || !complaint_type || !complaint_date) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (!complaint_type || !complaint_date) {
+    return sendError(res, 400, 'Missing required fields: complaint_type, complaint_date');
   }
 
   db.query('SELECT student_id, complaint_type, priority FROM Complaint', (complaintErr, complaints) => {
-    if (complaintErr) return res.status(500).json({ error: complaintErr.message });
+    if (complaintErr) return sendError(res, 500, complaintErr.message);
 
     db.query('SELECT staff_id, staff_name, role FROM Staff', (staffErr, staffList) => {
-      if (staffErr) return res.status(500).json({ error: staffErr.message });
+      if (staffErr) return sendError(res, 500, staffErr.message);
 
       const priorityResult = predictComplaintPriority(complaints, {
-        student_id: Number(student_id),
+        student_id: Number(userId),
         complaint_type,
       });
 
@@ -67,16 +79,17 @@ router.post('/', (req, res) => {
         VALUES (?, ?, ?, ?)
       `;
 
-      db.query(sql, [student_id, complaint_type, complaint_date, priorityResult.predictedPriority], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
+      db.query(sql, [userId, complaint_type, complaint_date, priorityResult.predictedPriority], (err, result) => {
+        if (err) return sendError(res, 500, err.message);
+
+        const responseData = {
+          complaint_id: result.insertId,
+          predictedPriority: priorityResult.predictedPriority,
+          ai_assignment_reason: assignmentResult.reason,
+        };
 
         if (!assignmentResult.assignedStaff) {
-          return res.status(201).json({
-            message: 'Complaint created successfully',
-            complaint_id: result.insertId,
-            predictedPriority: priorityResult.predictedPriority,
-            ai_assignment_reason: assignmentResult.reason,
-          });
+          return sendSuccess(res, responseData, 'Complaint created successfully');
         }
 
         db.query(
@@ -90,15 +103,12 @@ router.post('/', (req, res) => {
             `Auto-assigned by rule engine for ${complaint_type}`,
           ],
           (assignmentErr) => {
-            if (assignmentErr) return res.status(500).json({ error: assignmentErr.message });
+            if (assignmentErr) return sendError(res, 500, assignmentErr.message);
 
-            res.status(201).json({
-              message: 'Complaint created successfully',
-              complaint_id: result.insertId,
-              predictedPriority: priorityResult.predictedPriority,
+            sendSuccess(res, {
+              ...responseData,
               assigned_staff: assignmentResult.assignedStaff.staff_name,
-              ai_assignment_reason: assignmentResult.reason,
-            });
+            }, 'Complaint created and assigned successfully');
           }
         );
       });

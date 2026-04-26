@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth } = require('../middleware/authMiddleware');
 const { getMessSummary } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all mess info - auth required
+router.get('/', auth, (req, res) => {
   const sql = `
     SELECT
       m.mess_id,
@@ -20,13 +30,15 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
+
     const summary = getMessSummary(result);
     const enriched = result.map((row) => ({
       ...row,
       ai_menu_note: summary,
     }));
-    res.json(enriched);
+
+    sendSuccess(res, enriched, 'Mess info retrieved');
   });
 });
 

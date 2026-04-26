@@ -105,3 +105,8 @@ CREATE TABLE Menu (
     FOREIGN KEY (mess_id) REFERENCES Mess(mess_id),
   CONSTRAINT uq_menu UNIQUE (mess_id, day_of_week, meal_type)
 );
+
+
+ALTER TABLE Student ADD password VARCHAR(255);
+
+UPDATE Student SET password = '1234' WHERE student_id = 1;

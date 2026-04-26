@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { fetchCollection, getErrorMessage } from "../services/api";
+import { fetchCollection, getErrorMessage } from "../services/authApi";
 
 const endpointMap = {
   students: "/students",

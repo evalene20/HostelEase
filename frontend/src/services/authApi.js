@@ -30,15 +30,20 @@ function createAxiosInstance(baseURL) {
 
   // Add auth token to requests
   instance.interceptors.request.use(
-    (config) => {
-      const token = getToken();
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
-    },
-    (error) => Promise.reject(error)
-  );
+  (config) => {
+    const token = getToken();
+
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${token}`,
+      };
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
   // Handle 401 errors
   instance.interceptors.response.use(

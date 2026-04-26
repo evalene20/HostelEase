@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import EntityPage from "../../components/EntityPage";
 import Table from "../../components/Table";
-import { createRecord, fetchCollection, getErrorMessage } from "../../services/api";
+import { createRecord, fetchCollection, getErrorMessage } from "../../services/authApi";
 
 const columns = [
   { header: "ID", accessor: "staff_id" },

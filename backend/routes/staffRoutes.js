@@ -1,9 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const { auth, isAdmin } = require('../middleware/authMiddleware');
 const { getStaffFocus } = require('../services/aiRules');
 
-router.get('/', (req, res) => {
+const sendSuccess = (res, data, message = 'Success') => {
+  return res.json({ success: true, message, data });
+};
+
+const sendError = (res, status, message) => {
+  return res.status(status).json({ success: false, message, data: null });
+};
+
+// Get all staff - auth + isAdmin required
+router.get('/', auth, isAdmin, (req, res) => {
   const sql = `
     SELECT
       s.staff_id,
@@ -18,30 +28,30 @@ router.get('/', (req, res) => {
   `;
 
   db.query(sql, (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
+    if (err) return sendError(res, 500, err.message);
+
     const enriched = result.map((staff) => ({
       ...staff,
       ai_role_focus: getStaffFocus(staff.role),
     }));
-    res.json(enriched);
+
+    sendSuccess(res, enriched, 'Staff retrieved');
   });
 });
 
-router.post('/', (req, res) => {
+// Create staff - auth + isAdmin required
+router.post('/', auth, isAdmin, (req, res) => {
   const { staff_name, role, phone_no } = req.body || {};
 
   if (!staff_name || !role || !phone_no) {
-    return res.status(400).json({ error: 'Missing required fields' });
+    return sendError(res, 400, 'Missing required fields: staff_name, role, phone_no');
   }
 
-  const sql = `
-    INSERT INTO Staff (staff_name, role, phone_no)
-    VALUES (?, ?, ?)
-  `;
+  const sql = `INSERT INTO Staff (staff_name, role, phone_no) VALUES (?, ?, ?)`;
 
   db.query(sql, [staff_name, role, phone_no], (err, result) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ message: 'Staff created successfully', staff_id: result.insertId });
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { staff_id: result.insertId }, 'Staff created successfully');
   });
 });
 
