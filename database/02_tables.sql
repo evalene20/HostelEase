@@ -108,3 +108,35 @@ CREATE TABLE Menu (
 );
 
 ALTER TABLE Student ADD password VARCHAR(255);
+
+-- Admin management tables
+CREATE TABLE Room_Maintenance (
+  maintenance_id INT PRIMARY KEY AUTO_INCREMENT,
+  room_id INT NOT NULL,
+  issue_type VARCHAR(50) NOT NULL,
+  description VARCHAR(255),
+  status ENUM('PENDING','IN_PROGRESS','COMPLETED') DEFAULT 'PENDING',
+  requested_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+  completed_on DATETIME,
+  CONSTRAINT fk_maintenance_room FOREIGN KEY (room_id) REFERENCES Room(room_id)
+);
+
+CREATE TABLE Room_Inspection (
+  inspection_id INT PRIMARY KEY AUTO_INCREMENT,
+  room_id INT NOT NULL,
+  inspection_type VARCHAR(50) NOT NULL,
+  notes VARCHAR(500),
+  inspected_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+  inspected_by VARCHAR(100),
+  CONSTRAINT fk_inspection_room FOREIGN KEY (room_id) REFERENCES Room(room_id)
+);
+
+CREATE TABLE Student_Flag (
+  flag_id INT PRIMARY KEY AUTO_INCREMENT,
+  student_id INT NOT NULL,
+  flagged BOOLEAN DEFAULT TRUE,
+  reason VARCHAR(255),
+  flagged_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_flag_student FOREIGN KEY (student_id) REFERENCES Student(student_id),
+  CONSTRAINT uq_flag_student UNIQUE (student_id)
+);

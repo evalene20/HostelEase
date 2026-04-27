@@ -1,7 +1,38 @@
+import { useState } from "react";
 import "./RoomDrawer.css";
+import { requestRoomMaintenance, recordRoomPolicyInspection, getErrorMessage } from "../services/authApi";
 
 function RoomDrawer({ room, students, complaints, onClose, onOpenStudent }) {
+  const [loading, setLoading] = useState({});
+  const [message, setMessage] = useState("");
+
   if (!room) return null;
+
+  const handleMaintenance = async () => {
+    setLoading((prev) => ({ ...prev, maintenance: true }));
+    try {
+      await requestRoomMaintenance(room.room_id, "GENERAL", "Maintenance requested ");
+      setMessage("Maintenance request submitted");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (err) {
+      setMessage(getErrorMessage(err, "Failed to submit maintenance"));
+    } finally {
+      setLoading((prev) => ({ ...prev, maintenance: false }));
+    }
+  };
+
+  const handlePolicy = async () => {
+    setLoading((prev) => ({ ...prev, policy: true }));
+    try {
+      await recordRoomPolicyInspection(room.room_id, "Policy inspection recorded");
+      setMessage("Policy inspection recorded");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (err) {
+      setMessage(getErrorMessage(err, "Failed to record inspection"));
+    } finally {
+      setLoading((prev) => ({ ...prev, policy: false }));
+    }
+  };
 
   return (
     <div className="drawer-overlay" onClick={onClose}>
@@ -72,9 +103,29 @@ function RoomDrawer({ room, students, complaints, onClose, onOpenStudent }) {
             </div>
           )}
 
+          {message && (
+            <div style={{ padding: "12px", background: "#f0fdf4", color: "#166534", borderRadius: "6px", marginBottom: "16px" }}>
+              {message}
+            </div>
+          )}
+
           <div className="drawer-footer-actions">
-            <button className="btn btn-primary" style={{ flex: 1 }}>🔧 Send Maintenance</button>
-            <button className="btn btn-outline" style={{ flex: 1 }}>🛡️ Policy Inspection</button>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+              onClick={handleMaintenance}
+              disabled={loading.maintenance}
+            >
+              {loading.maintenance ? "..." : "🔧 Send Maintenance"}
+            </button>
+            <button
+              className="btn btn-outline"
+              style={{ flex: 1 }}
+              onClick={handlePolicy}
+              disabled={loading.policy}
+            >
+              {loading.policy ? "..." : "🛡️ Policy Inspection"}
+            </button>
             <button className="btn btn-outline" style={{ flex: 1 }}>📦 Inventory Check</button>
           </div>
         </div>

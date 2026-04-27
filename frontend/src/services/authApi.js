@@ -116,6 +116,25 @@ export async function updateBookingStatus(bookingId, status) {
   return tryRequest((api) => api.put(`/bookings/${bookingId}/status`, { status }));
 }
 
+// Room admin actions
+export async function requestRoomMaintenance(roomId, issueType, description) {
+  return tryRequest((api) => api.post(`/rooms/${roomId}/maintenance`, { issue_type: issueType, description }));
+}
+
+export async function recordRoomPolicyInspection(roomId, notes) {
+  return tryRequest((api) => api.post(`/rooms/${roomId}/policy`, { notes }));
+}
+
+// Student admin actions
+export async function toggleStudentFlag(studentId, flagged = true, reason = '') {
+  return tryRequest((api) => api.put(`/students/${studentId}/flag`, { flagged, reason }));
+}
+
+export async function fetchStudentPayments(studentId) {
+  const data = await tryRequest((api) => api.get(`/payments?student_id=${studentId}`));
+  return normalizeCollection(data);
+}
+
 // Complaint admin actions
 export async function assignComplaint(complaintId, staffId, remarks) {
   return tryRequest((api) => api.post(`/admin/complaints/${complaintId}/assign`, { staff_id: staffId, remarks }));

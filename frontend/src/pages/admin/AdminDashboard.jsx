@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Card from "../../components/Card";
 import useHostelData from "../../hooks/useHostelData";
 import { formatCurrency, getAdminInsights, getAdminMetrics } from "../../utils/dashboardInsights";
+import { fetchCollection } from "../../services/authApi";
 
 function InsightList({ title, items, emptyMessage = "No alerts right now." }) {
   return (
@@ -35,9 +36,25 @@ function InsightList({ title, items, emptyMessage = "No alerts right now." }) {
 
 function AdminDashboard() {
   const { data, loading, error } = useHostelData();
+  const [showStudents, setShowStudents] = useState(false);
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
 
   const metrics = useMemo(() => getAdminMetrics(data), [data]);
   const insights = useMemo(() => getAdminInsights(data), [data]);
+
+  const handleTotalStudentsClick = async () => {
+    setStudentsLoading(true);
+    try {
+      const data = await fetchCollection("/students");
+      setStudents(data);
+      setShowStudents(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -96,7 +113,9 @@ function AdminDashboard() {
           marginBottom: "48px",
         }}
       >
-        <Card title="Total Students" value={metrics.totalStudents} subtitle="Active enrollments" color="primary" />
+        <div onClick={handleTotalStudentsClick} style={{ cursor: 'pointer' }}>
+          <Card title="Total Students" value={metrics.totalStudents} subtitle="Active enrollments" color="primary" />
+        </div>
         <Card title="Available Beds" value={metrics.availableBeds} subtitle={`Across ${metrics.totalRooms} rooms`} color="success" />
         <Card title="Open Issues" value={metrics.totalComplaints} subtitle="Awaiting resolution" color="danger" />
         <Card title="Total Revenue" value={formatCurrency(metrics.totalRevenue)} subtitle="Current semester" color="info" />
@@ -135,6 +154,67 @@ function AdminDashboard() {
           )}
         </div>
       </section>
+
+      {/* Students List Modal */}
+      {showStudents && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowStudents(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "24px",
+              borderRadius: "8px",
+              minWidth: "500px",
+              maxWidth: "700px",
+              maxHeight: "80vh",
+              overflow: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3>Student List</h3>
+              <button onClick={() => setShowStudents(false)} style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer" }}>
+                ×
+              </button>
+            </div>
+            {studentsLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                    <th style={{ padding: "8px", textAlign: "left" }}>student_id</th>
+                    <th style={{ padding: "8px", textAlign: "left" }}>full_name</th>
+                    <th style={{ padding: "8px", textAlign: "left" }}>college_name</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((s) => (
+                    <tr key={s.student_id} style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <td style={{ padding: "8px" }}>{s.student_id}</td>
+                      <td style={{ padding: "8px" }}>{s.full_name}</td>
+                      <td style={{ padding: "8px" }}>{s.college_name || "N/A"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

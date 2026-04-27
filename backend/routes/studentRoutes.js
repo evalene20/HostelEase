@@ -86,4 +86,21 @@ router.post('/', auth, (req, res) => {
   });
 });
 
+// Toggle flag for review - auth required
+router.put('/:id/flag', auth, (req, res) => {
+  const studentId = req.params.id;
+  const { flagged = true, reason = '' } = req.body || {};
+
+  const sql = `
+    INSERT INTO Student_Flag (student_id, flagged, reason, flagged_on)
+    VALUES (?, ?, ?, NOW())
+    ON DUPLICATE KEY UPDATE flagged = ?, reason = ?, flagged_on = NOW()
+  `;
+
+  db.query(sql, [studentId, flagged, reason, flagged, reason], (err, result) => {
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { student_id: studentId, flagged }, flagged ? 'Student flagged for review' : 'Flag removed');
+  });
+});
+
 module.exports = router;

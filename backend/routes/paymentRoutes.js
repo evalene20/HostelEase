@@ -12,10 +12,11 @@ const sendError = (res, status, message) => {
   return res.status(status).json({ success: false, message, data: null });
 };
 
-// Get all payments - auth required (STUDENT sees own, ADMIN sees all)
+// Get all payments - auth required (STUDENT sees own, ADMIN sees all or filtered by student_id)
 router.get('/', auth, (req, res) => {
   const { role, userId } = req.user;
-  console.log('[DEBUG] /payments GET - req.user:', { role, userId });
+  const { student_id } = req.query;
+  console.log('[DEBUG] /payments GET - req.user:', { role, userId, student_id });
 
   let sql;
   let params = [];
@@ -37,7 +38,26 @@ router.get('/', auth, (req, res) => {
       ORDER BY p.payment_date DESC, p.payment_id DESC
     `;
     params = [userId];
+  } else if (student_id) {
+    // Admin filtering by specific student
+    sql = `
+      SELECT
+        p.payment_id,
+        p.booking_id,
+        b.student_id,
+        s.full_name,
+        p.amount,
+        p.payment_status,
+        p.payment_date
+      FROM Payment p
+      JOIN Booking b ON p.booking_id = b.booking_id
+      JOIN Student s ON b.student_id = s.student_id
+      WHERE b.student_id = ?
+      ORDER BY p.payment_date DESC, p.payment_id DESC
+    `;
+    params = [student_id];
   } else {
+    // Admin sees all
     sql = `
       SELECT
         p.payment_id,

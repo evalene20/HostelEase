@@ -36,13 +36,14 @@ const Bookings = () => {
   };
 
   const bookingColumns = [
-    { header: "ID", accessor: "booking_id" },
-    { header: "Student", accessor: "full_name" },
-    { header: "Room", accessor: "room_no" },
-    { header: "Hostel", accessor: "hostel_name" },
-    { header: "Date", accessor: "booking_date" },
+    { header: "booking_id", accessor: "booking_id" },
+    { header: "student_id", accessor: "student_id" },
+    { header: "full_name", accessor: "full_name" },
+    { header: "room_no", accessor: "room_no" },
+    { header: "hostel_name", accessor: "hostel_name" },
+    { header: "booking_date", accessor: "booking_date" },
     {
-      header: "Status",
+      header: "status",
       accessor: "status",
       render: (value) => <span className={`badge badge-${value?.toLowerCase()}`}>{value}</span>,
     },

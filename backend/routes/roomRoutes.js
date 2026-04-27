@@ -62,4 +62,30 @@ router.post('/', auth, (req, res) => {
   });
 });
 
+// Maintenance request for room - auth required
+router.post('/:id/maintenance', auth, (req, res) => {
+  const roomId = req.params.id;
+  const { issue_type = 'GENERAL', description = '' } = req.body || {};
+
+  const sql = `INSERT INTO Room_Maintenance (room_id, issue_type, description, status, requested_on) VALUES (?, ?, ?, 'PENDING', NOW())`;
+
+  db.query(sql, [roomId, issue_type, description], (err, result) => {
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { maintenance_id: result.insertId }, 'Maintenance request submitted');
+  });
+});
+
+// Policy inspection for room - auth required
+router.post('/:id/policy', auth, (req, res) => {
+  const roomId = req.params.id;
+  const { notes = '' } = req.body || {};
+
+  const sql = `INSERT INTO Room_Inspection (room_id, inspection_type, notes, inspected_on) VALUES (?, 'POLICY', ?, NOW())`;
+
+  db.query(sql, [roomId, notes], (err, result) => {
+    if (err) return sendError(res, 500, err.message);
+    sendSuccess(res, { inspection_id: result.insertId }, 'Policy inspection recorded');
+  });
+});
+
 module.exports = router;

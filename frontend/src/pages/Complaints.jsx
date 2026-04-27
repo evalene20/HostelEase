@@ -6,7 +6,6 @@ import {
   fetchCollection,
   createRecord,
   getErrorMessage,
-  fetchAdminComplaints,
   fetchAvailableStaff,
   assignComplaint,
   unassignComplaint,
@@ -91,7 +90,7 @@ const Complaints = () => {
   };
 
   const complaintColumns = [
-    { header: "ID", accessor: "complaint_id" },
+    { header: "complaint_id", accessor: "complaint_id" },
     { header: "Student", accessor: "full_name" },
     { header: "Type", accessor: "complaint_type" },
     { header: "Date", accessor: "complaint_date" },
