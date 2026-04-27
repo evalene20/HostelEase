@@ -1,7 +1,7 @@
 const mysql = require('mysql2');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const connectionConfig = {
   host: process.env.DB_HOST || 'localhost',
