@@ -148,6 +148,10 @@ export async function updateComplaintPriority(complaintId, priority) {
   return tryRequest((api) => api.put(`/admin/complaints/${complaintId}/priority`, { priority }));
 }
 
+export async function updateComplaintStatus(complaintId, status) {
+  return tryRequest((api) => api.put(`/admin/complaints/${complaintId}/status`, { status }));
+}
+
 export async function updateComplaintRemarks(complaintId, remarks) {
   return tryRequest((api) => api.put(`/admin/complaints/${complaintId}/remarks`, { remarks }));
 }

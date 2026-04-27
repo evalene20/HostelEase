@@ -1,7 +1,5 @@
 /*
   AI Engine (Rule-Based)
-  ---------------------
-  Provides:
   1. Room Recommendation
   2. Complaint Priority Prediction
   3. Staff Auto Assignment

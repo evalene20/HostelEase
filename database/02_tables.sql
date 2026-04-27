@@ -67,6 +67,7 @@ CREATE TABLE Complaint (
   complaint_type ENUM('WATER','ELECTRICITY','CLEANING','INTERNET','OTHER') NOT NULL,
   complaint_date DATE NOT NULL,
   priority ENUM('LOW','MEDIUM','HIGH') NOT NULL DEFAULT 'MEDIUM',
+  status ENUM('OPEN','IN_PROGRESS','ON_HOLD','RESOLVED','CLOSED') NOT NULL DEFAULT 'OPEN',
   CONSTRAINT fk_complaint_student
     FOREIGN KEY (student_id) REFERENCES Student(student_id)
 );

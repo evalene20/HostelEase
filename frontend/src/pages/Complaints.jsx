@@ -10,6 +10,7 @@ import {
   assignComplaint,
   unassignComplaint,
   updateComplaintPriority,
+  updateComplaintStatus,
 } from "../services/authApi";
 
 const Complaints = () => {
@@ -89,6 +90,21 @@ const Complaints = () => {
     }
   };
 
+  const handleStatusUpdate = async (complaintId, status) => {
+    setActionLoading((prev) => ({ ...prev, [`status-${complaintId}`]: true }));
+    try {
+      await updateComplaintStatus(complaintId, status);
+      const data = await fetchCollection("/complaints");
+      setComplaints(data);
+      setSubmitMessage(`Status updated to ${status}.`);
+      setTimeout(() => setSubmitMessage(""), 3000);
+    } catch (err) {
+      setError(getErrorMessage(err, "Unable to update status."));
+    } finally {
+      setActionLoading((prev) => ({ ...prev, [`status-${complaintId}`]: false }));
+    }
+  };
+
   const complaintColumns = [
     { header: "complaint_id", accessor: "complaint_id" },
     { header: "Student", accessor: "full_name" },
@@ -160,7 +176,30 @@ const Complaints = () => {
         );
       },
     },
-    { header: "Status", accessor: "complaint_status" },
+    {
+      header: "Status",
+      accessor: "complaint_status",
+      render: (value, row) => (
+        <select
+          value={value || "OPEN"}
+          onChange={(e) => handleStatusUpdate(row.complaint_id, e.target.value)}
+          disabled={actionLoading[`status-${row.complaint_id}`]}
+          style={{
+            padding: "4px 8px",
+            borderRadius: "4px",
+            border: "1px solid #ddd",
+            fontSize: "0.8rem",
+            cursor: actionLoading[`status-${row.complaint_id}`] ? "not-allowed" : "pointer",
+          }}
+        >
+          <option value="OPEN">Open</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="ON_HOLD">On Hold</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="CLOSED">Closed</option>
+        </select>
+      ),
+    },
     { header: "Days Open", accessor: "resolution_time_days" },
     { header: "AI Feedback", accessor: "ai_feedback" },
   ];

@@ -29,8 +29,8 @@ router.get('/', auth, isAdmin, (req, res) => {
       ca.assigned_on,
       ca.remarks,
       CASE
-        WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
-        ELSE 'PENDING_REVIEW'
+        WHEN ca.staff_id IS NOT NULL THEN 'IN_PROGRESS'
+        ELSE 'OPEN'
       END AS complaint_status,
       DATEDIFF(CURDATE(), c.complaint_date) AS days_open
     FROM Complaint c
@@ -171,6 +171,33 @@ router.delete('/:id/assign', auth, isAdmin, (req, res) => {
     }
 
     sendSuccess(res, { complaint_id: complaintId }, 'Staff unassigned');
+  });
+});
+
+// Update complaint status - auth + isAdmin required
+// NOTE: This requires the 'status' column to be added to Complaint table first
+router.put('/:id/status', auth, isAdmin, (req, res) => {
+  const complaintId = req.params.id;
+  const { status } = req.body;
+
+  if (!['OPEN', 'IN_PROGRESS', 'ON_HOLD', 'RESOLVED', 'CLOSED'].includes(status)) {
+    return sendError(res, 400, 'Invalid status. Use OPEN, IN_PROGRESS, ON_HOLD, RESOLVED, or CLOSED');
+  }
+
+  // TODO: Run this SQL first: ALTER TABLE Complaint ADD COLUMN status ENUM('OPEN','IN_PROGRESS','ON_HOLD','RESOLVED','CLOSED') DEFAULT 'OPEN';
+  const sql = 'UPDATE Complaint SET status = ? WHERE complaint_id = ?';
+
+  db.query(sql, [status, complaintId], (err, result) => {
+    if (err) {
+      console.error('[ERROR] Status update failed:', err.message);
+      return sendError(res, 500, 'Status column not found. Please run: ALTER TABLE Complaint ADD COLUMN status ENUM(OPEN,IN_PROGRESS,ON_HOLD,RESOLVED,CLOSED) DEFAULT OPEN');
+    }
+
+    if (result.affectedRows === 0) {
+      return sendError(res, 404, 'Complaint not found');
+    }
+
+    sendSuccess(res, { complaint_id: complaintId, status }, 'Status updated');
   });
 });
 

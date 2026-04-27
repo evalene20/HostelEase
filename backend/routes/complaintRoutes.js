@@ -38,8 +38,8 @@ router.get('/', auth, (req, res) => {
         ca.assigned_on,
         ca.remarks,
         CASE
-          WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
-          ELSE 'PENDING_REVIEW'
+          WHEN ca.staff_id IS NOT NULL THEN 'IN_PROGRESS'
+          ELSE 'OPEN'
         END AS complaint_status,
         DATEDIFF(CURDATE(), c.complaint_date) AS resolution_time_days
       FROM Complaint c
@@ -64,8 +64,8 @@ router.get('/', auth, (req, res) => {
         ca.assigned_on,
         ca.remarks,
         CASE
-          WHEN ca.staff_id IS NOT NULL THEN 'ASSIGNED'
-          ELSE 'PENDING_REVIEW'
+          WHEN ca.staff_id IS NOT NULL THEN 'IN_PROGRESS'
+          ELSE 'OPEN'
         END AS complaint_status,
         DATEDIFF(CURDATE(), c.complaint_date) AS resolution_time_days
       FROM Complaint c
