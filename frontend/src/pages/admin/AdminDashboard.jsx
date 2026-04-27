@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Card from "../../components/Card";
 import useHostelData from "../../hooks/useHostelData";
 import { formatCurrency, getAdminInsights, getAdminMetrics } from "../../utils/dashboardInsights";
-import { fetchCollection } from "../../services/authApi";
+import { fetchCollection, createRecord, getErrorMessage } from "../../services/authApi";
 
 function InsightList({ title, items, emptyMessage = "No alerts right now." }) {
   return (
@@ -39,6 +39,19 @@ function AdminDashboard() {
   const [showStudents, setShowStudents] = useState(false);
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
+  const [showAddStudent, setShowAddStudent] = useState(false);
+  const [studentForm, setStudentForm] = useState({
+    full_name: "",
+    email: "",
+    phone_no: "",
+    gender: "MALE",
+    dob: "",
+    register_no: "",
+    college_name: "",
+    address: "",
+  });
+  const [addStudentMessage, setAddStudentMessage] = useState("");
+  const [addStudentError, setAddStudentError] = useState("");
 
   const metrics = useMemo(() => getAdminMetrics(data), [data]);
   const insights = useMemo(() => getAdminInsights(data), [data]);
@@ -53,6 +66,36 @@ function AdminDashboard() {
       console.error(err);
     } finally {
       setStudentsLoading(false);
+    }
+  };
+
+  const handleStudentFormChange = ({ target: { name, value } }) => {
+    setStudentForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleAddStudent = async (e) => {
+    e.preventDefault();
+    setAddStudentError("");
+    setAddStudentMessage("");
+    try {
+      await createRecord("/students", studentForm);
+      setAddStudentMessage("Student added successfully.");
+      setStudentForm({
+        full_name: "",
+        email: "",
+        phone_no: "",
+        gender: "MALE",
+        dob: "",
+        register_no: "",
+        college_name: "",
+        address: "",
+      });
+      setTimeout(() => {
+        setShowAddStudent(false);
+        setAddStudentMessage("");
+      }, 2000);
+    } catch (err) {
+      setAddStudentError(getErrorMessage(err, "Failed to add student."));
     }
   };
 
@@ -135,7 +178,7 @@ function AdminDashboard() {
 
       <section className="card">
         <div style={{ marginBottom: "32px" }}>
-          <h2 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Behavioral Risk Monitoring</h2>
+          <h2 style={{ fontSize: "1.25rem", marginBottom: "8px" }}>Frequent Complaints</h2>
           <p style={{ color: "#64748b" }}>Surfacing students with repeated complaints or payment issues.</p>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
@@ -154,6 +197,17 @@ function AdminDashboard() {
           )}
         </div>
       </section>
+
+      {/* Add Student Button */}
+      <div style={{ marginBottom: "16px" }}>
+        <button
+          onClick={() => setShowAddStudent(true)}
+          className="btn btn-primary"
+          style={{ padding: "8px 16px" }}
+        >
+          + Add Student
+        </button>
+      </div>
 
       {/* Students List Modal */}
       {showStudents && (
@@ -212,6 +266,160 @@ function AdminDashboard() {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Add Student Modal */}
+      {showAddStudent && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowAddStudent(false)}
+        >
+          <div
+            style={{
+              background: "white",
+              padding: "24px",
+              borderRadius: "8px",
+              minWidth: "500px",
+              maxWidth: "600px",
+              maxHeight: "90vh",
+              overflow: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <h3>Add New Student</h3>
+              <button onClick={() => setShowAddStudent(false)} style={{ background: "none", border: "none", fontSize: "1.5rem", cursor: "pointer" }}>
+                ×
+              </button>
+            </div>
+
+            {addStudentMessage && (
+              <div className="badge badge-success" style={{ marginBottom: "16px", display: "block" }}>
+                {addStudentMessage}
+              </div>
+            )}
+            {addStudentError && (
+              <div className="badge badge-danger" style={{ marginBottom: "16px", display: "block" }}>
+                {addStudentError}
+              </div>
+            )}
+
+            <form onSubmit={handleAddStudent}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div className="form-group">
+                  <label className="form-label">Full Name *</label>
+                  <input
+                    type="text"
+                    name="full_name"
+                    className="form-input"
+                    value={studentForm.full_name}
+                    onChange={handleStudentFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    className="form-input"
+                    value={studentForm.email}
+                    onChange={handleStudentFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone *</label>
+                  <input
+                    type="tel"
+                    name="phone_no"
+                    className="form-input"
+                    value={studentForm.phone_no}
+                    onChange={handleStudentFormChange}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Gender</label>
+                  <select
+                    name="gender"
+                    className="form-select"
+                    value={studentForm.gender}
+                    onChange={handleStudentFormChange}
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dob"
+                    className="form-input"
+                    value={studentForm.dob}
+                    onChange={handleStudentFormChange}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Register Number</label>
+                  <input
+                    type="text"
+                    name="register_no"
+                    className="form-input"
+                    value={studentForm.register_no}
+                    onChange={handleStudentFormChange}
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label">College Name</label>
+                  <input
+                    type="text"
+                    name="college_name"
+                    className="form-input"
+                    value={studentForm.college_name}
+                    onChange={handleStudentFormChange}
+                  />
+                </div>
+                <div className="form-group" style={{ gridColumn: "1 / -1" }}>
+                  <label className="form-label">Address</label>
+                  <textarea
+                    name="address"
+                    className="form-input"
+                    value={studentForm.address}
+                    onChange={handleStudentFormChange}
+                    rows="2"
+                  />
+                </div>
+              </div>
+              <div style={{ marginTop: "24px", display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddStudent(false)}
+                  className="btn"
+                  style={{ background: "#f1f5f9" }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Student
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

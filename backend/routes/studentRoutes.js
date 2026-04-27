@@ -72,15 +72,18 @@ router.get('/', auth, (req, res) => {
 
 // Create student - auth required
 router.post('/', auth, (req, res) => {
-  const { register_no, full_name, college_id } = req.body || {};
+  const { register_no, full_name, email, phone_no, gender, dob, college_name, address, college_id } = req.body || {};
 
-  if (!register_no || !full_name || !college_id) {
-    return sendError(res, 400, 'Missing required fields: register_no, full_name, college_id');
+  if (!register_no || !full_name || !email || !phone_no) {
+    return sendError(res, 400, 'Missing required fields: register_no, full_name, email, phone_no');
   }
 
-  const sql = `INSERT INTO Student (register_no, full_name, college_id) VALUES (?, ?, ?)`;
+  const sql = `
+    INSERT INTO Student (register_no, full_name, email, phone_no, gender, dob, college_name, address, college_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
 
-  db.query(sql, [register_no, full_name, college_id], (err, result) => {
+  db.query(sql, [register_no, full_name, email, phone_no, gender || 'MALE', dob || null, college_name || null, address || null, college_id || null], (err, result) => {
     if (err) return sendError(res, 500, err.message);
     sendSuccess(res, { student_id: result.insertId }, 'Student created successfully');
   });

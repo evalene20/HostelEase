@@ -8,7 +8,13 @@ CREATE TABLE Student (
   student_id INT PRIMARY KEY AUTO_INCREMENT,
   register_no VARCHAR(30) NOT NULL UNIQUE,
   full_name VARCHAR(120) NOT NULL,
-  college_id INT NOT NULL,
+  email VARCHAR(120) NOT NULL UNIQUE,
+  phone_no VARCHAR(15) NOT NULL,
+  gender ENUM('MALE','FEMALE','OTHER') DEFAULT 'MALE',
+  dob DATE,
+  college_name VARCHAR(120),
+  address TEXT,
+  college_id INT,
   password VARCHAR(255),
   CONSTRAINT fk_student_college
     FOREIGN KEY (college_id) REFERENCES College(college_id)
